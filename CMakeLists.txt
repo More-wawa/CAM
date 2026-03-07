@@ -50,6 +50,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
         src/mainwindow.cpp
         include/mainwindow.h
         src/mainwindow.ui
+        include/Tool.h
+        include/FileType.h
 )
 target_link_libraries(${PROJECT_NAME}
         Qt::Core

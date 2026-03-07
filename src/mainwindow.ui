@@ -40,13 +40,14 @@
      <height>33</height>
     </rect>
    </property>
-   <widget class="QMenu" name="menu_F">
+   <widget class="QMenu" name="menuFile">
     <property name="title">
      <string>文件(&amp;F)</string>
     </property>
     <addaction name="actionOpenFile"/>
+    <addaction name="actionImportTool"/>
    </widget>
-   <widget class="QMenu" name="menu">
+   <widget class="QMenu" name="menuView">
     <property name="title">
      <string>视图(&amp;V)</string>
     </property>
@@ -56,14 +57,68 @@
     <addaction name="actionViewRight"/>
     <addaction name="actionViewFront"/>
     <addaction name="actionViewBack"/>
+    <addaction name="actionViewTool"/>
    </widget>
-   <addaction name="menu_F"/>
-   <addaction name="menu"/>
+   <widget class="QMenu" name="menuTool">
+    <property name="title">
+     <string>——</string>
+    </property>
+   </widget>
+   <addaction name="menuFile"/>
+   <addaction name="menuView"/>
+   <addaction name="menuTool"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
+  <widget class="QDockWidget" name="dockWidgetToolTable">
+   <property name="minimumSize">
+    <size>
+     <width>300</width>
+     <height>600</height>
+    </size>
+   </property>
+   <property name="windowTitle">
+    <string>刀库</string>
+   </property>
+   <attribute name="dockWidgetArea">
+    <number>1</number>
+   </attribute>
+   <widget class="QWidget" name="dockWidgetContents">
+    <widget class="QTableWidget" name="tableWidgetToolTable">
+     <property name="geometry">
+      <rect>
+       <x>0</x>
+       <y>0</y>
+       <width>321</width>
+       <height>551</height>
+      </rect>
+     </property>
+     <property name="rowCount">
+      <number>1</number>
+     </property>
+     <property name="columnCount">
+      <number>8</number>
+     </property>
+     <attribute name="horizontalHeaderVisible">
+      <bool>true</bool>
+     </attribute>
+     <attribute name="horizontalHeaderCascadingSectionResizes">
+      <bool>false</bool>
+     </attribute>
+     <row/>
+     <column/>
+     <column/>
+     <column/>
+     <column/>
+     <column/>
+     <column/>
+     <column/>
+     <column/>
+    </widget>
+   </widget>
+  </widget>
   <action name="actionOpenFile">
    <property name="text">
-    <string>打开(&amp;O)</string>
+    <string>打开模型(&amp;O)</string>
    </property>
   </action>
   <action name="actionViewTop">
@@ -94,6 +149,16 @@
   <action name="actionViewBack">
    <property name="text">
     <string>后视图</string>
+   </property>
+  </action>
+  <action name="actionImportTool">
+   <property name="text">
+    <string>打开刀具(&amp;T)</string>
+   </property>
+  </action>
+  <action name="actionViewTool">
+   <property name="text">
+    <string>打开刀库</string>
    </property>
   </action>
  </widget>
