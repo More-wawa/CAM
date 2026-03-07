@@ -1,12 +1,7 @@
-//
-// Created by More on 2026/3/5.
-//
-
-// You may need to build the project (run Qt uic code generator) to get "ui_MainWindow.h" resolved
-
 #include "../include/mainwindow.h"
 #include "../ui/ui_MainWindow.h"
 #include "../include/VTKManager.h"
+#include "../include/ToolManager.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -79,7 +74,7 @@ void MainWindow::on_actionOpenFile_triggered() {
     }
     file.close();
 
-    if (!vtkManager->openModelFile(fileName)) {
+    if (vtkManager->openModelFile(fileName) == ErrorType::ModulError) {
         QMessageBox::warning(this, tr("错误"), tr("无法打开文件"));
     }
 
@@ -143,7 +138,7 @@ void MainWindow::on_actionImportTool_triggered() {
             const QJsonObject obj = val.toObject();
 
             Tool t;
-            t.fileType = FileType::JSON;
+            t.fileType = FileType::Json;
             t.name = obj["name"].toString();
             t.diameter = obj["diameter"].toDouble();
             t.fluteLength = obj["fluteLength"].toDouble();
@@ -172,7 +167,7 @@ void MainWindow::saveToolTable() {
     }
 
     for (const auto &tool: toolList) {
-        if (tool.fileType == FileType::JSON) {
+        if (tool.fileType == FileType::Json) {
             QJsonArray toolArray;
 
             for (const auto &t: toolList) {
@@ -231,7 +226,7 @@ void MainWindow::loadToolTable() {
             QJsonObject obj = val.toObject();
 
             Tool t;
-            t.fileType = FileType::JSON;
+            t.fileType = FileType::Json;
             t.name = obj["name"].toString();
             t.diameter = obj["diameter"].toDouble();
             t.fluteLength = obj["fluteLength"].toDouble();

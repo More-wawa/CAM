@@ -51,9 +51,11 @@ add_executable(${PROJECT_NAME} src/main.cpp
         include/mainwindow.h
         ui/mainwindow.ui
         include/Tool.h
-        include/FileType.h
         src/vtkManager.cpp
         include/vtkManager.h
+        src/ToolManager.cpp
+        include/ToolManager.h
+        include/EnumType.h
 )
 target_link_libraries(${PROJECT_NAME}
         Qt::Core

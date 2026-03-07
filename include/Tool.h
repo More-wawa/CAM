@@ -1,13 +1,11 @@
-//
-// Created by More on 2026/3/7.
-//
+#pragma once
 
 #ifndef CAM_TOOL_H
 #define CAM_TOOL_H
 
 #endif //CAM_TOOL_H
 
-#include "FileType.h"
+#include "EnumType.h"
 #include <QString>
 
 struct Tool {

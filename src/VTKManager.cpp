@@ -9,6 +9,7 @@
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkOCCTReader.h>
 
+
 VTKManager* VTKManager::New()
 {
     return new VTKManager();
@@ -62,7 +63,7 @@ void VTKManager::init() {
     initialized = true;
 }
 
-bool VTKManager::openModelFile(QString fileName) {
+ErrorType VTKManager::openModelFile(QString fileName) {
     // 打开新 STEP 文件之前先清空缓存
     m_vtkRenderer->RemoveAllViewProps();
 
@@ -76,7 +77,7 @@ bool VTKManager::openModelFile(QString fileName) {
 
     // 检查输出是否有效
     if (!m_vtkOCCTReader->GetOutput()) {
-        return false;
+        return ErrorType::ModulError;
     }
     qDebug() << "STEP 文件读取成功";
 
@@ -89,7 +90,7 @@ bool VTKManager::openModelFile(QString fileName) {
     m_vtkRenderer->ResetCamera();
     m_vtkWidget->renderWindow()->Render();
 
-    return true;
+    return ErrorType::Success;
 }
 
 void VTKManager::setStandardView(const double dx, const double dy, const double dz, const double ux, const double uy,

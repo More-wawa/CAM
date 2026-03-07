@@ -1,3 +1,5 @@
+#pragma once
+
 #ifndef CAM_MAINWINDOW_H
 #define CAM_MAINWINDOW_H
 

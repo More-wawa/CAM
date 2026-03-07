@@ -1,9 +1,12 @@
+#pragma once
+
 #ifndef CAM_VTKMANAGER_H
 #define CAM_VTKMANAGER_H
 
-#include <qtmetamacros.h>
+#include "EnumType.h"
 #include <vtkSmartPointer.h>
 
+class QString;
 class QVTKOpenGLNativeWidget;
 class vtkRenderer;
 class vtkRenderWindow;
@@ -24,7 +27,7 @@ public:
     }
 
     void init();
-    bool openModelFile(QString fileName);
+    ErrorType openModelFile(QString fileName);
     void setStandardView(double dx, double dy, double dz, double ux, double uy, double uz) const;
 
 private:
