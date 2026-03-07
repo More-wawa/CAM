@@ -1,7 +1,3 @@
-//
-// Created by More on 2026/3/5.
-//
-
 #ifndef CAM_MAINWINDOW_H
 #define CAM_MAINWINDOW_H
 
@@ -17,16 +13,7 @@ namespace Ui {
 
 QT_END_NAMESPACE
 
-class QVTKOpenGLNativeWidget;
-class vtkRenderer;
-class vtkRenderWindow;
-class vtkInteractorStyleTrackballCamera;
-class vtkCompositePolyDataMapper;
-class vtkOCCTReader;
-class vtkActor;
-class vtkCamera;
-class vtkAxesActor;
-class vtkOrientationMarkerWidget;
+class VTKManager;
 class QDockWidget;
 class QTableWidget;
 
@@ -50,22 +37,9 @@ private:
     QDockWidget *toolWidget = nullptr; // 刀具窗口
     QTableWidget *toolTable = nullptr; // 刀具列表
 
-    QVTKOpenGLNativeWidget *m_vtkWidget = nullptr;
-    vtkSmartPointer<vtkRenderer> m_vtkRenderer;
-    vtkSmartPointer<vtkRenderWindow> m_vtkRenderWindow;
-    vtkSmartPointer<vtkInteractorStyleTrackballCamera> m_vtkStyle;
-    vtkSmartPointer<vtkCompositePolyDataMapper> m_vtkMapper;
-    vtkSmartPointer<vtkOCCTReader> m_vtkOCCTReader;
-    vtkSmartPointer<vtkActor> m_vtkActor;
-    vtkSmartPointer<vtkCamera> m_vtkCamera;
-    vtkSmartPointer<vtkAxesActor> m_vtkAxesActor;
-    vtkSmartPointer<vtkOrientationMarkerWidget> m_vtkOrientationMarkerWidget;
+    VTKManager *vtkManager;
 
     void init();
-
-    void initVTK();
-
-    void setStandardView(double dx, double dy, double dz, double ux, double uy, double uz) const;
 
     void updateToolTable() const;
 

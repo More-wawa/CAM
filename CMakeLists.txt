@@ -49,9 +49,11 @@ find_package(VTK REQUIRED COMPONENTS
 add_executable(${PROJECT_NAME} src/main.cpp
         src/mainwindow.cpp
         include/mainwindow.h
-        src/mainwindow.ui
+        ui/mainwindow.ui
         include/Tool.h
         include/FileType.h
+        src/vtkManager.cpp
+        include/vtkManager.h
 )
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
