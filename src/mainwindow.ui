@@ -1,0 +1,102 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>MainWindow</class>
+ <widget class="QMainWindow" name="MainWindow">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>802</width>
+    <height>627</height>
+   </rect>
+  </property>
+  <property name="minimumSize">
+   <size>
+    <width>800</width>
+    <height>600</height>
+   </size>
+  </property>
+  <property name="windowTitle">
+   <string>MainWindow</string>
+  </property>
+  <widget class="QWidget" name="centralwidget">
+   <widget class="QOpenGLWidget" name="openGLWidget">
+    <property name="geometry">
+     <rect>
+      <x>40</x>
+      <y>30</y>
+      <width>601</width>
+      <height>471</height>
+     </rect>
+    </property>
+   </widget>
+  </widget>
+  <widget class="QMenuBar" name="menubar">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>0</y>
+     <width>802</width>
+     <height>33</height>
+    </rect>
+   </property>
+   <widget class="QMenu" name="menu_F">
+    <property name="title">
+     <string>文件(&amp;F)</string>
+    </property>
+    <addaction name="actionOpenFile"/>
+   </widget>
+   <widget class="QMenu" name="menu">
+    <property name="title">
+     <string>视图(&amp;V)</string>
+    </property>
+    <addaction name="actionViewTop"/>
+    <addaction name="actionViewBottom"/>
+    <addaction name="actionViewLeft"/>
+    <addaction name="actionViewRight"/>
+    <addaction name="actionViewFront"/>
+    <addaction name="actionViewBack"/>
+   </widget>
+   <addaction name="menu_F"/>
+   <addaction name="menu"/>
+  </widget>
+  <widget class="QStatusBar" name="statusbar"/>
+  <action name="actionOpenFile">
+   <property name="text">
+    <string>打开(&amp;O)</string>
+   </property>
+  </action>
+  <action name="actionViewTop">
+   <property name="text">
+    <string>俯视图</string>
+   </property>
+  </action>
+  <action name="actionViewBottom">
+   <property name="text">
+    <string>仰视图</string>
+   </property>
+  </action>
+  <action name="actionViewLeft">
+   <property name="text">
+    <string>左视图</string>
+   </property>
+  </action>
+  <action name="actionViewRight">
+   <property name="text">
+    <string>右视图</string>
+   </property>
+  </action>
+  <action name="actionViewFront">
+   <property name="text">
+    <string>正视图</string>
+   </property>
+  </action>
+  <action name="actionViewBack">
+   <property name="text">
+    <string>后视图</string>
+   </property>
+  </action>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
