@@ -5,10 +5,8 @@
 #include <QVTKOpenGLNativeWidget.h>
 #include <QFileDialog>
 #include <QMessageBox>
-#include <QJsonArray>
 #include <QJsonObject>
 #include <QDockWidget>
-#include <QStandardPaths>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
@@ -40,17 +38,23 @@ void MainWindow::init() {
     toolTable->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     toolTable->setSortingEnabled(true); // 允许点击表头排序
 
-    // 初始化刀具保存目录
-    if (const QString appDataDir = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation); !QDir().
-        mkpath(appDataDir)) {
-        QMessageBox::warning(this, tr("错误"), QString("初始化刀具目录失败：%1").arg(appDataDir));
+    // 创建并初始化刀具管理模块
+    toolManager = ToolManager::New();
+    ResultType r = toolManager->init();
+    if (r == ResultType::CreateFileError) {
+        QMessageBox::warning(this, tr("错误"), tr("初始化刀具目录失败"));
     }
 
-    // 加载刀具
-    toolSavePath = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation) + toolSavePath;
-    loadToolTable();
-    toolCount = toolList.size();
+    QString message;
+    // 尝试从本地加载刀具
+    if (r = toolManager->loadToolFromLocal(&message); r == ResultType::Success) {
+        ui->statusbar->showMessage(message, 3000);
+    } else if (r == ResultType::JsonParseError) {
+        QMessageBox::warning(this, tr("错误"), message);
+    }
+    updateToolTable();
 
+    // 创建并初始化 VTK 管理模块
     vtkManager = VTKManager::New();
     vtkManager->init();
     setCentralWidget(vtkManager->m_vtk_widget());
@@ -70,11 +74,14 @@ void MainWindow::on_actionOpenFile_triggered() {
     QFile file(fileName);
     if (!file.open(QIODevice::ReadOnly)) {
         QMessageBox::warning(this, tr("错误"), tr("无法打开文件"));
+        file.close();
         return;
     }
     file.close();
 
-    if (vtkManager->openModelFile(fileName) == ErrorType::ModulError) {
+    if (const ResultType r = vtkManager->openModelFile(fileName); r == ResultType::Success) {
+        modelLoaded = true;
+    } else if (r == ResultType::FileOpenError) {
         QMessageBox::warning(this, tr("错误"), tr("无法打开文件"));
     }
 
@@ -83,183 +90,58 @@ void MainWindow::on_actionOpenFile_triggered() {
 }
 
 void MainWindow::on_actionViewTop_triggered() const {
-    vtkManager->setStandardView(0, 1, 0, 0, 0, 1);
+    if (modelLoaded) vtkManager->setStandardView(0, 1, 0, 0, 0, 1);
 }
 
 void MainWindow::on_actionViewBottom_triggered() const {
-    vtkManager->setStandardView(0, -1, 0, 0, 0, 1);
+    if (modelLoaded) vtkManager->setStandardView(0, -1, 0, 0, 0, 1);
 }
 
 void MainWindow::on_actionViewFront_triggered() const {
-    vtkManager->setStandardView(0, 0, 1, 0, 1, 0);
+    if (modelLoaded) vtkManager->setStandardView(0, 0, 1, 0, 1, 0);
 }
 
 void MainWindow::on_actionViewBack_triggered() const {
-    vtkManager->setStandardView(0, 0, -1, 0, 1, 0);
+    if (modelLoaded) vtkManager->setStandardView(0, 0, -1, 0, 1, 0);
 }
 
 void MainWindow::on_actionViewLeft_triggered() const {
-    vtkManager->setStandardView(-1, 0, 0, 0, 1, 0);
+    if (modelLoaded) vtkManager->setStandardView(-1, 0, 0, 0, 1, 0);
 }
 
 void MainWindow::on_actionViewRight_triggered() const {
-    vtkManager->setStandardView(1, 0, 0, 0, 1, 0);
+    if (modelLoaded) vtkManager->setStandardView(1, 0, 0, 0, 1, 0);
 }
 
-void MainWindow::on_actionImportTool_triggered() {
+void MainWindow::on_actionOpenTool_triggered() {
     const auto fileName = QFileDialog::getOpenFileName(
         this,
         tr("导入刀具库"),
         QString(),
         tr("支持的刀具文件 (*.json *.csv *.tsv);;JSON 文件 (*.json);;CSV/TSV 文件 (*.csv *.tsv);;所有文件 (*.*)")
     );
+    if (fileName.isEmpty()) return; // 用户取消
 
-    if (fileName.isEmpty()) return;
-
-    QFile file(fileName);
-    if (!file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        QMessageBox::warning(this, tr("错误"), tr("无法打开文件"));
-        return;
-    }
-
-    const auto ext = QFileInfo(fileName).suffix().toLower();
-    const QByteArray data = file.readAll();
-    file.close();
-
-    if (ext == "json") {
-        const QJsonDocument doc = QJsonDocument::fromJson(data);
-        const QJsonArray array = doc.array();
-        if (doc.isNull() || !doc.isArray()) {
-            QMessageBox::warning(this, tr("错误"), tr("JSON 格式无效"));
-            return;
+    QString message;
+    // 打开刀具文件
+    if (ResultType r = toolManager->openTool(fileName, FileType::Json, &message); r != ResultType::Success) {
+        if (r == ResultType::FileOpenError) {
+            QMessageBox::warning(this, tr("错误"), message);
+        } else if (r == ResultType::JsonParseError) {
+            QMessageBox::warning(this, tr("错误"), message);
         }
-        for (const auto &val: array) {
-            if (!val.isObject()) continue;
-            const QJsonObject obj = val.toObject();
-
-            Tool t;
-            t.fileType = FileType::Json;
-            t.name = obj["name"].toString();
-            t.diameter = obj["diameter"].toDouble();
-            t.fluteLength = obj["fluteLength"].toDouble();
-            t.totalLength = obj["totalLength"].toDouble();
-            t.cornerRadius = obj["cornerRadius"].toDouble(0.0);
-            t.fluteCount = obj["fluteCount"].toInt(2);
-            t.material = obj["material"].toString();
-            t.type = obj["type"].toString();
-            t.uniqueKey = getUniqueKey(t);
-
-            qDebug() << t.uniqueKey;
-            if (isUniqueTool(t.uniqueKey)) toolList.append(t);
-
-            saveToolTable();
+    } else {
+        // 将刀具保存至本地
+        if (r = toolManager->saveToolToLocal(&message); r == ResultType::Success) {
+            ui->statusbar->showMessage(message, 3000);
+        } else if (r == ResultType::NoNewTools) {
+            QMessageBox::warning(this, tr("警告"), message);
+        } else if (r == ResultType::FileOpenError) {
+            QMessageBox::warning(this, tr("错误"), message);
         }
+        // 更新刀具列表
+        updateToolTable();
     }
-
-    updateToolTable();
-    QMessageBox::information(this, tr("成功"), tr("已导入 %1 把刀具").arg(toolList.size() - toolCount));
-    toolCount = toolList.size();
-}
-
-void MainWindow::saveToolTable() {
-    if (toolList.isEmpty()) {
-        return;
-    }
-
-    for (const auto &tool: toolList) {
-        if (tool.fileType == FileType::Json) {
-            QJsonArray toolArray;
-
-            for (const auto &t: toolList) {
-                QJsonObject toolJSON;
-                toolJSON["name"] = t.name;
-                toolJSON["diameter"] = t.diameter;
-                toolJSON["fluteLength"] = t.fluteLength;
-                toolJSON["totalLength"] = t.totalLength;
-                toolJSON["cornerRadius"] = t.cornerRadius;
-                toolJSON["fluteCount"] = t.fluteCount;
-                toolJSON["material"] = t.material;
-                toolJSON["type"] = t.type;
-                toolJSON["uniqueKey"] = t.uniqueKey;
-
-                toolArray.append(toolJSON);
-            }
-
-            QJsonObject root;
-            root["toolList"] = toolArray;
-            root["version"] = "1.0";
-            root["lastSaved"] = QDateTime::currentDateTime().toString(Qt::ISODate);
-
-            const QJsonDocument doc(root);
-
-            QFile file(toolSavePath + ".json");
-            if (!file.open(QIODevice::WriteOnly | QIODevice::Text)) {
-                QMessageBox::warning(this, "保存失败", "无法写入文件：" + file.fileName());
-                return;
-            }
-            file.write(doc.toJson(QJsonDocument::Indented));
-            qDebug() << "File Type JSON, save to " << file.fileName();
-            file.close();
-        }
-    }
-
-    if (const auto c = toolList.size() - toolCount; c > 0) {
-        ui->statusbar->showMessage(QString("%1副刀具已保存至本地").arg(toolList.size() - toolCount), 3000);
-    }
-}
-
-void MainWindow::loadToolTable() {
-    // JSON
-    if (QFile file(toolSavePath + ".json"); file.exists() && file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        const QByteArray data = file.readAll();
-        file.close();
-
-        const QJsonDocument doc = QJsonDocument::fromJson(data);
-        if (doc.isNull() || !doc.isObject()) {
-            return;
-        }
-
-        QJsonObject root = doc.object();
-
-        for (const auto array = root["toolList"].toArray(); const auto &val: array) {
-            if (!val.isObject()) continue;
-            QJsonObject obj = val.toObject();
-
-            Tool t;
-            t.fileType = FileType::Json;
-            t.name = obj["name"].toString();
-            t.diameter = obj["diameter"].toDouble();
-            t.fluteLength = obj["fluteLength"].toDouble();
-            t.totalLength = obj["totalLength"].toDouble();
-            t.cornerRadius = obj["cornerRadius"].toDouble(0.0);
-            t.fluteCount = obj["fluteCount"].toInt(2);
-            t.material = obj["material"].toString();
-            t.type = obj["type"].toString();
-            t.uniqueKey = obj["uniqueKey"].toString();
-
-            toolList.append(t);
-        }
-    }
-
-    updateToolTable();
-
-    if (!toolList.isEmpty()) {
-        ui->statusbar->showMessage(QString("已从本地成功加载%1副刀具").arg(toolList.size()), 3000);
-    }
-}
-
-QString MainWindow::getUniqueKey(const Tool &t) {
-    return QString("%1|%2|%3").arg(t.name).arg(t.cornerRadius).arg(t.diameter);
-}
-
-bool MainWindow::isUniqueTool(const QString &uniKey) {
-    if (uniKey.isEmpty()) return false;
-    foreach(const auto &t, toolList) {
-        if (uniKey == t.uniqueKey) {
-            return false;
-        }
-    }
-    return true;
 }
 
 void MainWindow::updateToolTable() const {
@@ -270,17 +152,17 @@ void MainWindow::updateToolTable() const {
 
     // 清空旧内容，设置行数
     toolTable->clearContents();
-    toolTable->setRowCount(toolList.size());
+    toolTable->setRowCount(toolManager->cur_tool_count());
 
     // 如果没有刀具，直接返回
-    if (toolList.isEmpty()) {
+    if (toolManager->cur_tool_count() == 0) {
         toolTable->setRowCount(0);
         return;
     }
 
     // 填充每一行
-    for (int row = 0; row < toolList.size(); ++row) {
-        const Tool &t = toolList.at(row);
+    for (int row = 0; row < toolManager->cur_tool_count(); ++row) {
+        const Tool &t = toolManager->tool_list().at(row);
         int col = 0;
 
         // 编号

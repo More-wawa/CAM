@@ -45,7 +45,7 @@
      <string>文件(&amp;F)</string>
     </property>
     <addaction name="actionOpenFile"/>
-    <addaction name="actionImportTool"/>
+    <addaction name="actionOpenTool"/>
    </widget>
    <widget class="QMenu" name="menuView">
     <property name="title">
@@ -151,7 +151,7 @@
     <string>后视图</string>
    </property>
   </action>
-  <action name="actionImportTool">
+  <action name="actionOpenTool">
    <property name="text">
     <string>打开刀具(&amp;T)</string>
    </property>

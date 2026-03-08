@@ -27,7 +27,7 @@ public:
     }
 
     void init();
-    ErrorType openModelFile(QString fileName);
+    ResultType openModelFile(const QString &fileName);
     void setStandardView(double dx, double dy, double dz, double ux, double uy, double uz) const;
 
 private:

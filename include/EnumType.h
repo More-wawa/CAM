@@ -5,9 +5,14 @@
 
 #endif //CAM_ENUMTYPE_H
 
-enum class ErrorType {
+enum class ResultType {
     Success,
     ModulError,
+    FileOpenError,
+    JsonParseError,
+    CreateFileError,
+    ToolListEmpty,
+    NoNewTools,
 };
 
 enum class FileType {

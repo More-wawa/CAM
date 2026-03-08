@@ -16,6 +16,7 @@ VTKManager* VTKManager::New()
 }
 
 void VTKManager::init() {
+    // 检查是否已经初始化
     if (initialized) return;
 
     // 创建 VTK Widget
@@ -63,7 +64,7 @@ void VTKManager::init() {
     initialized = true;
 }
 
-ErrorType VTKManager::openModelFile(QString fileName) {
+ResultType VTKManager::openModelFile(const QString &fileName) {
     // 打开新 STEP 文件之前先清空缓存
     m_vtkRenderer->RemoveAllViewProps();
 
@@ -77,7 +78,7 @@ ErrorType VTKManager::openModelFile(QString fileName) {
 
     // 检查输出是否有效
     if (!m_vtkOCCTReader->GetOutput()) {
-        return ErrorType::ModulError;
+        return ResultType::ModulError;
     }
     qDebug() << "STEP 文件读取成功";
 
@@ -90,7 +91,7 @@ ErrorType VTKManager::openModelFile(QString fileName) {
     m_vtkRenderer->ResetCamera();
     m_vtkWidget->renderWindow()->Render();
 
-    return ErrorType::Success;
+    return ResultType::Success;
 }
 
 void VTKManager::setStandardView(const double dx, const double dy, const double dz, const double ux, const double uy,

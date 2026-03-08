@@ -5,7 +5,6 @@
 
 #include <QMainWindow>
 #include <vtkSmartPointer.h>
-#include "Tool.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -16,6 +15,7 @@ namespace Ui {
 QT_END_NAMESPACE
 
 class VTKManager;
+class ToolManager;
 class QDockWidget;
 class QTableWidget;
 
@@ -30,28 +30,16 @@ public:
 private:
     Ui::MainWindow *ui;
 
-    bool vtkInitialized = false;
     bool modelLoaded = false;
-    QString toolSavePath = "/toolList";
-    QList<Tool> toolList; // 所有刀具
-    size_t toolCount = 0; // 导入前刀具总数
-    Tool *currentTool = nullptr; // 当前刀具
     QDockWidget *toolWidget = nullptr; // 刀具窗口
     QTableWidget *toolTable = nullptr; // 刀具列表
 
     VTKManager *vtkManager;
+    ToolManager *toolManager;
 
     void init();
 
     void updateToolTable() const;
-
-    void saveToolTable();
-
-    void loadToolTable();
-
-    static QString getUniqueKey(const Tool &t);
-
-    bool isUniqueTool(const QString &uniKey);
 
 private slots:
     void on_actionOpenFile_triggered();
@@ -70,7 +58,7 @@ private slots:
 
     void on_actionViewTool_triggered() const;
 
-    void on_actionImportTool_triggered();
+    void on_actionOpenTool_triggered();
 };
 
 #endif //CAM_MAINWINDOW_H
