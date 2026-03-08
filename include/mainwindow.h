@@ -5,6 +5,8 @@
 
 #include <QMainWindow>
 #include <vtkSmartPointer.h>
+#include "EnumType.h"
+#include "Tool.h"
 
 QT_BEGIN_NAMESPACE
 
@@ -34,12 +36,16 @@ private:
     QDockWidget *toolWidget = nullptr; // 刀具窗口
     QTableWidget *toolTable = nullptr; // 刀具列表
 
-    VTKManager *vtkManager;
-    ToolManager *toolManager;
+    VTKManager *vtkManager{};
+    ToolManager *toolManager{};
 
     void init();
 
     void updateToolTable() const;
+
+    void saveToolToLocal();
+
+    ResultType getSelectedToolList();
 
 private slots:
     void on_actionOpenFile_triggered();
@@ -59,6 +65,8 @@ private slots:
     void on_actionViewTool_triggered() const;
 
     void on_actionOpenTool_triggered();
+
+    void on_pushButtonDeleteTools_clicked();
 };
 
 #endif //CAM_MAINWINDOW_H

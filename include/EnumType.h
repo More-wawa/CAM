@@ -12,7 +12,8 @@ enum class ResultType {
     JsonParseError,
     CreateFileError,
     ToolListEmpty,
-    NoNewTools,
+    NoChangeTool,
+    NoToolSelected,
 };
 
 enum class FileType {

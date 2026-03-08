@@ -1,5 +1,4 @@
 #include "../include/ToolManager.h"
-#include <QFile>
 #include <qfileinfo.h>
 #include <QMessageBox>
 #include <QJsonObject>
@@ -21,8 +20,10 @@ ResultType ToolManager::init() {
     }
 
     // 加载刀具
-    // loadToolTable();
     curToolCount = toolList.size();
+
+    // 初始化刀具数组
+
 
     // 确认已经初始化
     initialized = true;
@@ -70,9 +71,8 @@ ResultType ToolManager::openTool(const QString &fileName, const FileType fileTyp
     return ResultType::Success;
 }
 
-
 QString ToolManager::getUniqueKey(const Tool &t) {
-    return QString("%1|%2|%3").arg(t.name).arg(t.cornerRadius).arg(t.diameter);
+    return QString("%1").arg(t.name);
 }
 
 bool ToolManager::isUniqueTool(const QString &uniKey) {
@@ -86,10 +86,6 @@ bool ToolManager::isUniqueTool(const QString &uniKey) {
 }
 
 ResultType ToolManager::saveToolToLocal(QString *message) {
-    if (toolList.isEmpty()) {
-        return ResultType::ToolListEmpty;
-    }
-
     QJsonArray toolArray;
 
     for (const auto &t: toolList) {
@@ -120,17 +116,22 @@ ResultType ToolManager::saveToolToLocal(QString *message) {
 
     const QJsonDocument doc(root);
     file.write(doc.toJson(QJsonDocument::Indented));
-    qDebug() << "File Type JSON, save to " << file.fileName();
     file.close();
 
-    if (const auto c = toolList.size() - curToolCount; c > 0) {
-        *message = QString("%1 把新刀具已保存至本地").arg(toolList.size() - curToolCount);
+    // if (toolList.isEmpty()) {
+    //     *message = "刀库为空";
+    //     curToolCount = toolList.size();
+    //     return ResultType::ToolListEmpty;
+    // }
+
+    if (const auto c = abs(toolList.size() - curToolCount); c > 0) {
+        *message = QString("%1 把刀具数据已更新至本地").arg(c);
         curToolCount = toolList.size();
         return ResultType::Success;
     }
 
-    *message = "没有可用新刀具";
-    return ResultType::NoNewTools;
+    *message = "没有刀具数据更新";
+    return ResultType::NoChangeTool;
 }
 
 ResultType ToolManager::loadToolFromLocal(QString *message) {
@@ -165,11 +166,25 @@ ResultType ToolManager::loadToolFromLocal(QString *message) {
     }
 
     if (toolList.isEmpty()) {
-        *message = "本地 JSON 刀具文件失效: " + saveToolLocation;
-        return ResultType::JsonParseError;
+        *message = "本地 JSON 刀具文件为空";
+        return ResultType::ToolListEmpty;
     }
 
     *message = QString("已从本地加载 %1 把刀具").arg(toolList.size());
     curToolCount = toolList.size();
+    return ResultType::Success;
+}
+
+ResultType ToolManager::deleteToolSelected(QString *message) {
+    for (const auto &tool: toolListSelected) {
+        for (int i = 0; i < toolList.size(); i++) {
+            // 根据刀具的 uniqueKey 从刀库中删除
+            if (toolList.at(i).uniqueKey == tool.uniqueKey) {
+                toolList.removeAt(i);
+            }
+        }
+    }
+
+    *message = QString("成功删除 %1 把刀具").arg(curToolCount - toolList.size());
     return ResultType::Success;
 }

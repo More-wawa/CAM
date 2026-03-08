@@ -6,12 +6,11 @@
 #include "Tool.h"
 #include <QStandardPaths>
 
-class QDockWidget;
-class QTableWidget;
-
 class ToolManager {
 public:
     static ToolManager *New();
+
+    static QString getUniqueKey(const Tool &t);
 
     ResultType init();
 
@@ -21,6 +20,8 @@ public:
 
     ResultType loadToolFromLocal(QString *message);
 
+    ResultType deleteToolSelected(QString *message);
+
     [[nodiscard]] int cur_tool_count() const {
         return curToolCount;
     }
@@ -29,18 +30,18 @@ public:
         return toolList;
     }
 
+    void set_tool_list_selected(const QList<Tool> &tool_list_selected) {
+        toolListSelected = tool_list_selected;
+    }
+
 private:
     QString appDataLocation = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QString saveToolLocation = appDataLocation + "/toolList.json";
     QList<Tool> toolList; // 所有刀具
+    QList<Tool> toolListSelected; // 已选中的刀具数组
     int curToolCount = 0; // 导入前刀具总数
-    Tool *currentTool = nullptr; // 当前刀具
-    QDockWidget *toolWidget = nullptr; // 刀具窗口
-    QTableWidget *toolTable = nullptr; // 刀具列表
 
     bool initialized = false;
-
-    static QString getUniqueKey(const Tool &t);
 
     bool isUniqueTool(const QString &uniKey);
 };
