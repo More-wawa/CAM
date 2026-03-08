@@ -165,7 +165,7 @@
   </widget>
   <action name="actionOpenFile">
    <property name="text">
-    <string>打开模型(&amp;O)</string>
+    <string>导入模型(&amp;O)</string>
    </property>
   </action>
   <action name="actionViewTop">
@@ -200,7 +200,7 @@
   </action>
   <action name="actionOpenTool">
    <property name="text">
-    <string>打开刀具(&amp;T)</string>
+    <string>导入刀具(&amp;T)</string>
    </property>
   </action>
   <action name="actionViewTool">

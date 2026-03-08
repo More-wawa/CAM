@@ -11,6 +11,8 @@
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
 
+    connect(ui->tableWidgetToolTable, &QTableWidget::cellDoubleClicked, this, &MainWindow::tableWidgetDoubleClicked);
+
     init();
 }
 
@@ -37,7 +39,7 @@ void MainWindow::init() {
     toolTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // 禁止编辑
     toolTable->verticalHeader()->setVisible(false); // 隐藏行号
     toolTable->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
-    toolTable->setSortingEnabled(true); // 允许点击表头排序
+    // toolTable->setSortingEnabled(true); // 允许点击表头排序
 
     // 创建并初始化刀具管理模块
     toolManager = ToolManager::New();
@@ -341,4 +343,12 @@ void MainWindow::on_pushButtonSelectTool_clicked() {
     toolManager->set_current_tool(tool);
 
     ui->labelCurrentTool->setText(QString("当前选中 %1 号刀具").arg(selectedRow + 1));
+}
+
+void MainWindow::tableWidgetDoubleClicked(const int row, const int column) const {
+    const Tool tool = getTool(row);
+
+    toolManager->set_current_tool(tool);
+
+    ui->labelCurrentTool->setText(QString("当前选中 %1 号刀具").arg(row + 1));
 }

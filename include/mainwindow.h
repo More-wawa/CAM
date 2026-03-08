@@ -71,6 +71,8 @@ private slots:
     void on_pushButtonDeleteTools_clicked();
 
     void on_pushButtonSelectTool_clicked();
+
+    void tableWidgetDoubleClicked(int row, int column) const;
 };
 
 #endif //CAM_MAINWINDOW_H
