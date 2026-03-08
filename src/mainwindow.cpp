@@ -20,6 +20,7 @@ MainWindow::~MainWindow() {
 
 void MainWindow::init() {
     setWindowTitle("CAM");
+    setWindowIcon(QIcon("../image/ico.png"));
 
     // 绑定控件
     toolWidget = ui->dockWidgetToolTable;
@@ -196,6 +197,14 @@ void MainWindow::on_actionViewTool_triggered() const {
 }
 
 void MainWindow::on_pushButtonDeleteTools_clicked() {
+    // 确认删除确认框
+    if (QMessageBox::question(this, "确认删除", "确定要删除选中的刀具吗？",
+                              QMessageBox::Yes | QMessageBox::No,
+                              QMessageBox::No) // 默认焦点在“否”
+        == QMessageBox::No) {
+        return;
+    }
+
     ResultType r;
     if (r = getSelectedToolList(); r == ResultType::NoToolSelected) {
         return;
@@ -204,10 +213,8 @@ void MainWindow::on_pushButtonDeleteTools_clicked() {
     QString message;
     if (r = toolManager->deleteToolSelected(&message); r == ResultType::Success) {
         QMessageBox::warning(this, "删除成功", message);
-        qDebug() << "1 " << toolManager->cur_tool_count();
         // 更新本地文件
         saveToolToLocal();
-        qDebug() << "2 " << toolManager->cur_tool_count();
         // 更新刀具列表
         updateToolTable();
     } else if (r == ResultType::ToolListEmpty) {

@@ -137,7 +137,7 @@ ResultType ToolManager::saveToolToLocal(QString *message) {
 ResultType ToolManager::loadToolFromLocal(QString *message) {
     QFile file(saveToolLocation);
     if (!file.exists() || !file.open(QIODevice::ReadOnly | QIODevice::Text)) {
-        *message = "本地刀具文件打开失败: " + saveToolLocation;
+        *message = "未发现刀具文件存储文件";
         file.close();
         return ResultType::FileOpenError;
     }
