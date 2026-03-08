@@ -91,6 +91,13 @@
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout">
      <item>
+      <widget class="QLabel" name="labelCurrentTool">
+       <property name="text">
+        <string>当前没有选中刀具</string>
+       </property>
+      </widget>
+     </item>
+     <item>
       <widget class="QTableWidget" name="tableWidgetToolTable">
        <property name="minimumSize">
         <size>
@@ -119,6 +126,22 @@
        <column/>
        <column/>
        <column/>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="pushButtonSelectTool">
+       <property name="sizePolicy">
+        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+         <horstretch>0</horstretch>
+         <verstretch>0</verstretch>
+        </sizepolicy>
+       </property>
+       <property name="layoutDirection">
+        <enum>Qt::LayoutDirection::LeftToRight</enum>
+       </property>
+       <property name="text">
+        <string>选中刀具</string>
+       </property>
       </widget>
      </item>
      <item>

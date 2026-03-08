@@ -41,9 +41,9 @@ void MainWindow::init() {
 
     // 创建并初始化刀具管理模块
     toolManager = ToolManager::New();
-    ResultType r = toolManager->init();
-    if (r == ResultType::CreateFileError) {
+    if (const ResultType r = toolManager->init(); r == ResultType::CreateFileError) {
         QMessageBox::warning(this, tr("错误"), tr("初始化刀具目录失败"));
+        return;
     }
 
     QString message;
@@ -235,6 +235,57 @@ void MainWindow::saveToolToLocal() {
     }
 }
 
+Tool MainWindow::getTool(const int row) const {
+    Tool tool;
+
+    // 列 1 - 名称
+    const QTableWidgetItem *item = ui->tableWidgetToolTable->item(row, 1);
+    tool.name = item ? item->text().trimmed() : "";
+
+    // 列 2 - 类型
+    item = ui->tableWidgetToolTable->item(row, 2);
+    tool.type = item ? item->text().trimmed() : "";
+
+    // 列 3 - 直径
+    item = ui->tableWidgetToolTable->item(row, 3);
+    if (item) {
+        bool ok;
+        const double val = item->text().toDouble(&ok);
+        tool.diameter = ok ? val : 0.0;
+    } else {
+        tool.diameter = 0.0;
+    }
+
+    // 列 4 - 刃长
+    item = ui->tableWidgetToolTable->item(row, 4);
+    if (item) {
+        bool ok;
+        const double val = item->text().toDouble(&ok);
+        tool.fluteLength = ok ? val : 0.0;
+    } else {
+        tool.fluteLength = 0.0;
+    }
+
+    // 列 5 - 刃数
+    item = ui->tableWidgetToolTable->item(row, 5);
+    if (item) {
+        bool ok;
+        const int val = item->text().toInt(&ok);
+        tool.fluteCount = ok ? val : 2; // 默认 2 刃
+    } else {
+        tool.fluteCount = 2;
+    }
+
+    // 列 6 - 材质
+    item = ui->tableWidgetToolTable->item(row, 6);
+    tool.material = item ? item->text().trimmed() : "";
+
+    // uniqueKey
+    tool.uniqueKey = ToolManager::getUniqueKey(tool);
+
+    return tool;
+}
+
 ResultType MainWindow::getSelectedToolList() {
     QList<QTableWidgetItem *> selectedItems = ui->tableWidgetToolTable->selectedItems();
 
@@ -254,57 +305,40 @@ ResultType MainWindow::getSelectedToolList() {
 
     QList<Tool> toolListSelected;
     for (const int row: selectedRows) {
-        Tool tool;
-
-        // 列 1 - 名称
-        const QTableWidgetItem *item = ui->tableWidgetToolTable->item(row, 1);
-        tool.name = item ? item->text().trimmed() : "";
-
-        // 列 2 - 类型
-        item = ui->tableWidgetToolTable->item(row, 2);
-        tool.type = item ? item->text().trimmed() : "";
-
-        // 列 3 - 直径
-        item = ui->tableWidgetToolTable->item(row, 3);
-        if (item) {
-            bool ok;
-            double val = item->text().toDouble(&ok);
-            tool.diameter = ok ? val : 0.0;
-        } else {
-            tool.diameter = 0.0;
-        }
-
-        // 列 4 - 刃长
-        item = ui->tableWidgetToolTable->item(row, 4);
-        if (item) {
-            bool ok;
-            double val = item->text().toDouble(&ok);
-            tool.fluteLength = ok ? val : 0.0;
-        } else {
-            tool.fluteLength = 0.0;
-        }
-
-        // 列 5 - 刃数
-        item = ui->tableWidgetToolTable->item(row, 5);
-        if (item) {
-            bool ok;
-            int val = item->text().toInt(&ok);
-            tool.fluteCount = ok ? val : 2; // 默认 2 刃
-        } else {
-            tool.fluteCount = 2;
-        }
-
-        // 列 6 - 材质
-        item = ui->tableWidgetToolTable->item(row, 6);
-        tool.material = item ? item->text().trimmed() : "";
-
-        // uniqueKey
-        tool.uniqueKey = toolManager->getUniqueKey(tool);
-
-        toolListSelected.append(tool);
+        toolListSelected.append(getTool(row));
     }
 
     toolManager->set_tool_list_selected(toolListSelected);
 
     return ResultType::Success;
+}
+
+void MainWindow::on_pushButtonSelectTool_clicked() {
+    QList<QTableWidgetItem *> selectedItems = ui->tableWidgetToolTable->selectedItems();
+
+    // 判断是否存在有效选中
+    if (selectedItems.isEmpty()) {
+        QMessageBox::warning(this, "警告", "请先选中刀具");
+        return;
+    }
+
+    // 获取所有选中的唯一行号
+    QSet<int> selectedRows;
+    for (const QTableWidgetItem *item: selectedItems) {
+        if (item) {
+            selectedRows.insert(item->row());
+        }
+    }
+    if (selectedRows.size() > 1) {
+        QMessageBox::warning(this, "警告", "只能选择一把刀具");
+        return;
+    }
+
+    // 获取选中的唯一行号
+    const int selectedRow = selectedItems[0]->row();
+    const Tool tool = getTool(selectedRow);
+
+    toolManager->set_current_tool(tool);
+
+    ui->labelCurrentTool->setText(QString("当前选中 %1 号刀具").arg(selectedRow + 1));
 }

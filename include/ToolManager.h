@@ -34,9 +34,14 @@ public:
         toolListSelected = tool_list_selected;
     }
 
+    void set_current_tool(const Tool &current_tool) {
+        currentTool = current_tool;
+    }
+
 private:
     QString appDataLocation = QStandardPaths::writableLocation(QStandardPaths::AppDataLocation);
     QString saveToolLocation = appDataLocation + "/toolList.json";
+    Tool currentTool = Tool(); // 当前选中刀具
     QList<Tool> toolList; // 所有刀具
     QList<Tool> toolListSelected; // 已选中的刀具数组
     int curToolCount = 0; // 导入前刀具总数

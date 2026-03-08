@@ -188,3 +188,13 @@ ResultType ToolManager::deleteToolSelected(QString *message) {
     *message = QString("成功删除 %1 把刀具").arg(curToolCount - toolList.size());
     return ResultType::Success;
 }
+
+
+
+
+
+
+
+
+
+

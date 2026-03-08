@@ -47,6 +47,8 @@ private:
 
     ResultType getSelectedToolList();
 
+    Tool getTool(int row) const;
+
 private slots:
     void on_actionOpenFile_triggered();
 
@@ -67,6 +69,8 @@ private slots:
     void on_actionOpenTool_triggered();
 
     void on_pushButtonDeleteTools_clicked();
+
+    void on_pushButtonSelectTool_clicked();
 };
 
 #endif //CAM_MAINWINDOW_H
