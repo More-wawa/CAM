@@ -2,6 +2,7 @@
 #include "../ui/ui_MainWindow.h"
 #include "../include/VTKManager.h"
 #include "../include/ToolManager.h"
+#include "../include/dialogaddtool.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <QFileDialog>
 #include <QMessageBox>
@@ -343,6 +344,11 @@ void MainWindow::on_pushButtonSelectTool_clicked() {
     toolManager->set_current_tool(tool);
 
     ui->labelCurrentTool->setText(QString("当前选中 %1 号刀具").arg(selectedRow + 1));
+}
+
+void MainWindow::on_pushButtonAddTool_clicked() {
+    DialogAddTool dialog_add_tool(this);
+    dialog_add_tool.exec();
 }
 
 void MainWindow::tableWidgetDoubleClicked(const int row, const int column) const {

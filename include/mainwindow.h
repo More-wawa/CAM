@@ -21,6 +21,8 @@ class ToolManager;
 class QDockWidget;
 class QTableWidget;
 
+class DialogAddTool;
+
 class MainWindow : public QMainWindow {
     Q_OBJECT
 
@@ -71,6 +73,8 @@ private slots:
     void on_pushButtonDeleteTools_clicked();
 
     void on_pushButtonSelectTool_clicked();
+
+    void on_pushButtonAddTool_clicked();
 
     void tableWidgetDoubleClicked(int row, int column) const;
 };

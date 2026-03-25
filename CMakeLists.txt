@@ -7,8 +7,8 @@ set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_PREFIX_PATH "C:/App/Qt/6.10.1/msvc2022_64")
-set(DLL_DIR "C:/Users/More/ClionProjects/DLL")
+set(CMAKE_PREFIX_PATH "C:/Qt/6.11.0/msvc2022_64")
+set(DLL_DIR "C:/Users/MoreW/ClionProjects/DLL")
 set(VTK_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/vtk-with-occt/lib/cmake/vtk-9.6")
 set(VTK_BIN_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/vtk-with-occt/bin")
 set(OCCT_BIN_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/opencascade-7.9.3-vc14-64/win64/vc14/bin")
@@ -56,6 +56,9 @@ add_executable(${PROJECT_NAME} src/main.cpp
         src/ToolManager.cpp
         include/ToolManager.h
         include/EnumType.h
+        src/dialogaddtool.cpp
+        include/dialogaddtool.h
+        ui/dialogaddtool.ui
 )
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
@@ -100,6 +103,11 @@ if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
                 "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
                 "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
     endforeach()
+
+    # 复制内存管理 dll
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+                COMMAND ${CMAKE_COMMAND} -E copy "${DLL_DIR}/jemalloc.dll"
+                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
 
     # 复制 VTK 所需 dll
     if(EXISTS "${VTK_BIN_DIR}" AND IS_DIRECTORY "${VTK_BIN_DIR}")
