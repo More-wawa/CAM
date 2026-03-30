@@ -118,11 +118,11 @@ ResultType ToolManager::saveToolToLocal(QString *message) {
     file.write(doc.toJson(QJsonDocument::Indented));
     file.close();
 
-    // if (toolList.isEmpty()) {
-    //     *message = "刀库为空";
-    //     curToolCount = toolList.size();
-    //     return ResultType::ToolListEmpty;
-    // }
+    if (toolList.isEmpty()) {
+        *message = "刀库为空";
+        curToolCount = toolList.size();
+        return ResultType::ToolListEmpty;
+    }
 
     if (const auto c = abs(toolList.size() - curToolCount); c > 0) {
         *message = QString("%1 把刀具数据已更新至本地").arg(c);
@@ -189,12 +189,22 @@ ResultType ToolManager::deleteToolSelected(QString *message) {
     return ResultType::Success;
 }
 
+ResultType ToolManager::addTool(QString m_name, double m_diameter, double m_fluteLength, double m_totalLength,
+                                double m_cornerRadius, int m_fluteCount, QString m_material, QString m_type,
+                                QString *message) {
 
+    Tool t;
+    t.fileType = FileType::Json;
+    t.name = m_name;
+    t.diameter = m_diameter;
+    t.fluteLength = m_fluteLength;
+    t.totalLength = m_totalLength;
+    t.cornerRadius = m_cornerRadius;
+    t.fluteCount = m_fluteCount;
+    t.material = m_material;
+    t.type = m_type;
+    t.uniqueKey = getUniqueKey(t);
 
-
-
-
-
-
-
-
+    toolList.append(t);
+    return ResultType::Success;
+}

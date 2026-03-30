@@ -22,6 +22,18 @@ public:
 
     ResultType deleteToolSelected(QString *message);
 
+    ResultType addTool(
+        QString m_name,
+        double m_diameter,
+        double m_fluteLength,
+        double m_totalLength,
+        double m_cornerRadius,
+        int m_fluteCount,
+        QString m_material,
+        QString m_type,
+        QString *message
+    );
+
     [[nodiscard]] int cur_tool_count() const {
         return curToolCount;
     }

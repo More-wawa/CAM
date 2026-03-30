@@ -215,7 +215,7 @@ void MainWindow::on_pushButtonDeleteTools_clicked() {
 
     QString message;
     if (r = toolManager->deleteToolSelected(&message); r == ResultType::Success) {
-        QMessageBox::warning(this, "删除成功", message);
+        ui->labelCurrentTool->setText(message);
         // 更新本地文件
         saveToolToLocal();
         // 更新刀具列表
@@ -348,7 +348,39 @@ void MainWindow::on_pushButtonSelectTool_clicked() {
 
 void MainWindow::on_pushButtonAddTool_clicked() {
     DialogAddTool dialog_add_tool(this);
-    dialog_add_tool.exec();
+
+    if (dialog_add_tool.exec() == QDialog::Accepted) {
+        QString m_toolName = dialog_add_tool.get_tool_name();
+        double m_diameter = dialog_add_tool.get_diameter();
+        double m_fluteLength = dialog_add_tool.get_flute_length();
+        double m_totalLength = dialog_add_tool.get_total_length();
+        double m_cornerRadius = dialog_add_tool.get_corner_radius();
+        int m_fluteCount = dialog_add_tool.get_flute_count();
+        QString m_material = dialog_add_tool.get_material();
+        QString m_type = dialog_add_tool.get_type();
+
+        QString message;
+        if (ResultType r = toolManager->addTool(
+            m_toolName,
+            m_diameter,
+            m_fluteLength,
+            m_fluteCount,
+            m_totalLength,
+            m_cornerRadius,
+            m_material,
+            m_type,
+            &message
+        ); r == ResultType::Success) {
+            ui->labelCurrentTool->setText(QString("成功添加 %1 刀具").arg(m_toolName));
+        }
+
+        // 更新本地文件
+        saveToolToLocal();
+        // 更新刀具列表
+        updateToolTable();
+    } else {
+        qDebug() << "用户取消了操作";
+    }
 }
 
 void MainWindow::tableWidgetDoubleClicked(const int row, const int column) const {
