@@ -1,81 +1,68 @@
-cmake_minimum_required(VERSION 4.1)
+cmake_minimum_required(VERSION 3.20)
 project(CAM)
 
+# 基础编译设置
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+
+# Qt 自动处理
 set(CMAKE_AUTOMOC ON)
 set(CMAKE_AUTORCC ON)
 set(CMAKE_AUTOUIC ON)
 
-set(CMAKE_PREFIX_PATH "C:/Qt/6.11.0/msvc2022_64")
-set(DLL_DIR "C:/Users/MoreW/ClionProjects/DLL")
-set(VTK_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/vtk-with-occt/lib/cmake/vtk-9.6")
-set(VTK_BIN_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/vtk-with-occt/bin")
-set(OCCT_ROOT "${DLL_DIR}/${CMAKE_BUILD_TYPE}/opencascade-7.9.3-vc14-64/win64/vc14")
-set(OCCT_BIN_DIR "${OCCT_ROOT}/bin")
-set(OCCT_3RDPARTY_ROOT_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/3rdparty-vc14-64")
+# 确保 CMAKE_BUILD_TYPE 有默认值
+if(NOT CMAKE_BUILD_TYPE)
+    set(CMAKE_BUILD_TYPE Debug)
+endif()
 
-include_directories("${DLL_DIR}/${CMAKE_BUILD_TYPE}/opencascade-7.9.3-vc14-64/inc")
-link_directories("${OCCT_ROOT}/lib")
+# 路径定义
+set(CMAKE_PREFIX_PATH "C:/Qt/6.10.2/msvc2022_64")
+set(DLL_DIR "C:/Users/MoreW/CLionProjects/DLL")
 
-set(QT_LIBS Core Gui Widgets OpenGLWidgets OpenGL)
-set(OCCT_3RDPARTY_BIN_DIRS
-        "${OCCT_3RDPARTY_ROOT_DIR}/tbb-2021.13.0-x64/bin"
-        "${OCCT_3RDPARTY_ROOT_DIR}/openvr-1.14.15-64/bin/win64"
-        "${OCCT_3RDPARTY_ROOT_DIR}/freeimage-3.18.0-x64/bin"
-        "${OCCT_3RDPARTY_ROOT_DIR}/ffmpeg-3.3.4-64/bin"
+set(VTK_DIR "${DLL_DIR}/vtk-9.4.0/lib/cmake/vtk-9.4")
+set(VTK_BIN_DIR "${DLL_DIR}/vtk-9.4.0/bin")
+
+set(OCCT_ROOT "${DLL_DIR}/opencascade-7.9.3-vc14-64")
+set(OCCT_BIN_DIR "${OCCT_ROOT}/win64/vc14/bin")
+set(OCCT_LIB_DIR "${OCCT_ROOT}/win64/vc14/lib")
+set(OCCT_INC_DIR "${OCCT_ROOT}/inc")
+
+set(OCCT_3RDPARTY_ROOT_DIR "${DLL_DIR}/3rdparty-vc14-64")
+
+# 依赖项前置处理
+set(TBB_DIR "${OCCT_3RDPARTY_ROOT_DIR}/tbb-2021.13.0-x64/lib/cmake/TBB")
+find_package(TBB QUIET)
+
+# 查找核心库
+find_package(Qt6 REQUIRED COMPONENTS Core Gui Widgets OpenGL OpenGLWidgets)
+
+# 查找 VTK
+find_package(VTK REQUIRED)
+
+# 包含目录与库搜索路径
+include_directories(
+        "include"
+        "${OCCT_INC_DIR}"
+        "${OCCT_3RDPARTY_ROOT_DIR}/tbb-2021.13.0-x64/include"
+        "${OCCT_3RDPARTY_ROOT_DIR}/freetype-2.13.3-x64/include/freetype2"
 )
+
+link_directories(
+        "${OCCT_LIB_DIR}"
+        "${OCCT_3RDPARTY_ROOT_DIR}/tbb-2021.13.0-x64/lib"
+        "${OCCT_3RDPARTY_ROOT_DIR}/freetype-2.13.3-x64/lib"
+)
+
+# 定义 OCCT 链接列表
 set(OCCT_LIBS
-        # --- 1. 高级桥接与算法库 (放在最前) ---
-        TKIVtk                  # OCCT 与 VTK 的桥接库 (核心依赖)
-        TKOffset                # 刀具补偿与路径偏移算法 (CAM 核心)
-        # --- 2. 数据交换与格式支持 ---
-        TKXSBase                # 提供 XSControl_Reader 基类实现
-        TKDESTEP                # STEP 格式读写支持 (7.9.3 新库名)
-        # --- 3. 可视化与交互管理 (解决 LNK2019/LNK1120 报错的关键) ---
-        TKV3d                   # 3D 视图控制
-        TKService               # 图形服务
-        TKHLR                   # 消隐线算法 (Hidden Line Removal)
-        TKMesh                  # 网格化 (用于显示和计算)
-        # --- 4. 拓扑、几何与基本体构造 ---
-        TKPrim                  # 基本体构造
-        TKTopAlgo               # 拓扑通用算法
-        TKBRep                  # 边界表示法 (BRep) 核心
-        TKGeomAlgo              # 几何算法
-        TKGeomBase              # 几何基础
-        # --- 5. 基础内核 ---
-        TKMath                  # 数学库
-        TKernel                 # OCCT 核心内核
+        TKIVtk TKOffset TKXSBase TKDESTEP TKV3d TKService
+        TKHLR TKMesh TKPrim TKTopAlgo TKBRep TKGeomAlgo
+        TKGeomBase TKMath TKernel freetype tbb
 )
 
-find_package(Qt6 COMPONENTS
-        Core
-        Gui
-        Widgets
-        OpenGL
-        OpenGLWidgets
-        REQUIRED)
-find_package(VTK REQUIRED COMPONENTS
-        CommonCore              # 核心基础库
-        CommonDataModel         # 核心数据结构
-        CommonExecutionModel    # 核心机制
-        CommonTransforms        # 坐标变换
-        RenderingCore           # 渲染核心
-        RenderingOpenGL2        # OpenGL 后端
-        InteractionStyle        # 交互
-        GUISupportQt            # Qt 支持核心
-        ViewsQt                 # QVTKOpenGLNativeWidget 所在模块
-        RenderingQt             # QT 渲染
-        IOOCCT                  # OCCT 读取 STEP 格式支持
-        # 文件读取
-        FiltersModeling
-        FiltersSources
-        # 参考线
-        RenderingAnnotation
-        InteractionWidgets
-)
-
-add_executable(${PROJECT_NAME} src/main.cpp
+# 创建执行文件
+add_executable(${PROJECT_NAME}
+        src/main.cpp
         src/mainwindow.cpp
         include/mainwindow.h
         ui/mainwindow.ui
@@ -90,108 +77,60 @@ add_executable(${PROJECT_NAME} src/main.cpp
         ui/dialogaddtool.ui
 )
 
-
-target_link_libraries(${PROJECT_NAME}
-        Qt::Core
-        Qt::Gui
-        Qt::Widgets
-        Qt::OpenGL
-        Qt::OpenGLWidgets
+# 链接库
+target_link_libraries(${PROJECT_NAME} PRIVATE
+        Qt6::Core
+        Qt6::Gui
+        Qt6::Widgets
+        Qt6::OpenGL
+        Qt6::OpenGLWidgets
         ${VTK_LIBRARIES}
         ${OCCT_LIBS}
 )
 
-# 在 main.cpp 中设置默认格式
+# 定义宏
 target_compile_definitions(${PROJECT_NAME} PRIVATE VTK_OPENGL2_BACKEND)
 
-if (WIN32 AND NOT DEFINED CMAKE_TOOLCHAIN_FILE)
-    # 判断是否 Debug
-    set(DEBUG_SUFFIX)
-    if (MSVC AND CMAKE_BUILD_TYPE MATCHES "Debug")
-        set(DEBUG_SUFFIX "d")
-    endif()
+# Windows 平台下的 DLL 自动拷贝
+if (WIN32)
+    set(DEST_DIR "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
 
-    # 判断是否找到 Qt 安装目录
-    set(QT_INSTALL_PATH "${CMAKE_PREFIX_PATH}")
-    if(NOT EXISTS "${QT_INSTALL_PATH}/bin")
-        MESSAGE("QT_INSTALL_PATH not founded")
-    endif()
-
-    # 复制 Qt platforms 插件
-    if(EXISTS "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll")
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E make_directory
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${QT_INSTALL_PATH}/plugins/platforms/qwindows${DEBUG_SUFFIX}.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>/plugins/platforms/")
-    endif()
-
-    # 复制其他需要的 Qt DLL
-    foreach(QT_LIB ${QT_LIBS})
-        add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy
-                "${QT_INSTALL_PATH}/bin/Qt6${QT_LIB}${DEBUG_SUFFIX}.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
-    endforeach()
-
-    # 复制内存管理 dll
+    # 拷贝 Qt 核心 DLL 和 插件
     add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy "${DLL_DIR}/jemalloc.dll"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>")
+            COMMAND ${CMAKE_COMMAND} -E make_directory "${DEST_DIR}/platforms"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_PREFIX_PATH}/bin/Qt6Core.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_PREFIX_PATH}/bin/Qt6Gui.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_PREFIX_PATH}/bin/Qt6Widgets.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_PREFIX_PATH}/bin/Qt6OpenGL.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_PREFIX_PATH}/bin/Qt6OpenGLWidgets.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${CMAKE_PREFIX_PATH}/plugins/platforms/qwindows.dll" "${DEST_DIR}/platforms"
+            COMMENT "Copying Qt Runtime..."
+    )
 
-    # 复制 VTK 所需 dll
-    if(EXISTS "${VTK_BIN_DIR}" AND IS_DIRECTORY "${VTK_BIN_DIR}")
+    # 拷贝 VTK DLL
+    if(EXISTS "${VTK_BIN_DIR}")
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${VTK_BIN_DIR}"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMENT "Copying VTK DLLs from ${VTK_BIN_DIR} to output directory"
-        )
-    else()
-        message(WARNING
-                "VTK bin directory not found or empty: ${VTK_BIN_DIR}\n"
-                "VTK DLLs will NOT be copied automatically.\n"
-                "Please manually copy from ${VTK_BIN_DIR} or add it to PATH."
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "${VTK_BIN_DIR}" "${DEST_DIR}"
+                COMMENT "Copying VTK DLLs..."
         )
     endif()
 
-    # 复制 OCCT 所有 dll
-    if (EXISTS "${OCCT_BIN_DIR}" AND IS_DIRECTORY "${OCCT_BIN_DIR}")
+    # 拷贝 OCCT DLL
+    if(EXISTS "${OCCT_BIN_DIR}")
         add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                COMMAND ${CMAKE_COMMAND} -E copy_directory
-                "${OCCT_BIN_DIR}"
-                "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                COMMENT "Copying OCCT DLLs from ${OCCT_BIN_DIR} to output directory"
-        )
-    else()
-        message(WARNING
-                "OCCT bin directory not found or empty: ${OCCT_BIN_DIR}\n"
-                "OCCT DLLs will NOT be copied automatically.\n"
-                "Please manually copy from ${OCCT_BIN_DIR} or add it to PATH."
+                COMMAND ${CMAKE_COMMAND} -E copy_directory "${OCCT_BIN_DIR}" "${DEST_DIR}"
+                COMMENT "Copying OCCT DLLs..."
         )
     endif()
 
-    # 复制 OCCT_3RDPARTY 所需 dll
-    if (EXISTS "${OCCT_3RDPARTY_ROOT_DIR}" AND IS_DIRECTORY "${OCCT_3RDPARTY_ROOT_DIR}")
-        foreach (third_bin ${OCCT_3RDPARTY_BIN_DIRS})
-            if (EXISTS "${third_bin}" AND IS_DIRECTORY "${third_bin}")
-                add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
-                        COMMAND ${CMAKE_COMMAND} -E copy_directory
-                        "${third_bin}"
-                        "$<TARGET_FILE_DIR:${PROJECT_NAME}>"
-                        COMMENT "Copying OCCT DLLs from ${OCCT_BIN_DIR} to output directory"
-                )
-            else ()
-                message(WARNING
-                        "OCCT_3RDPARTY directory not found or empty: ${third_bin}"
-                )
-            endif ()
-        endforeach ()
-    else()
-        message(WARNING
-                "OCCT_3RDPARTY directory not found or empty: ${OCCT_3RDPARTY_ROOT_DIR}"
-        )
-    endif()
+    # 拷贝重要的第三方库
+    add_custom_command(TARGET ${PROJECT_NAME} POST_BUILD
+            COMMAND ${CMAKE_COMMAND} -E copy "${OCCT_3RDPARTY_ROOT_DIR}/tbb-2021.13.0-x64/bin/tbb12.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${OCCT_3RDPARTY_ROOT_DIR}/freetype-2.13.3-x64/bin/freetype.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${OCCT_3RDPARTY_ROOT_DIR}/openvr-1.14.15-64/bin/win64/openvr_api.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy "${OCCT_3RDPARTY_ROOT_DIR}/freeimage-3.18.0-x64/bin/FreeImage.dll" "${DEST_DIR}"
+            COMMAND ${CMAKE_COMMAND} -E copy_directory "${OCCT_3RDPARTY_ROOT_DIR}/ffmpeg-3.3.4-64/bin" "${DEST_DIR}"
+            COMMENT "Copying 3rdparty DLLs..."
+            COMMAND ${CMAKE_COMMAND} -E copy "${DLL_DIR}/jemalloc.dll" "${DEST_DIR}"
+    )
 endif()
