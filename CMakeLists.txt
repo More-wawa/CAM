@@ -55,9 +55,28 @@ link_directories(
 
 # 定义 OCCT 链接列表
 set(OCCT_LIBS
-        TKIVtk TKOffset TKXSBase TKDESTEP TKV3d TKService
-        TKHLR TKMesh TKPrim TKTopAlgo TKBRep TKGeomAlgo
-        TKGeomBase TKMath TKernel freetype tbb
+        TKIVtk
+        TKShHealing
+        TKBO
+        TKOffset
+        TKFillet
+        TKTopAlgo
+        TKBRep
+        TKG3d
+        TKGeomAlgo
+        TKGeomBase
+        TKG2d
+        TKMath
+        TKernel
+        TKMesh
+        TKPrim
+        TKHLR
+        TKV3d
+        TKService
+        TKDESTEP
+        TKXSBase
+        freetype
+        tbb
 )
 
 # 创建执行文件
@@ -75,6 +94,11 @@ add_executable(${PROJECT_NAME}
         src/dialogaddtool.cpp
         include/dialogaddtool.h
         ui/dialogaddtool.ui
+        include/Toolpath.h
+        include/ToolpathPlanner.h
+        src/ToolpathPlanner.cpp
+        include/GCodeGenerator.h
+        src/GCodeGenerator.cpp
 )
 
 # 链接库

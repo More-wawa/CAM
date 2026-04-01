@@ -6,38 +6,27 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>800</width>
-    <height>653</height>
+    <width>1200</width>
+    <height>800</height>
    </rect>
   </property>
   <property name="minimumSize">
    <size>
-    <width>800</width>
-    <height>600</height>
+    <width>1000</width>
+    <height>700</height>
    </size>
   </property>
   <property name="windowTitle">
-   <string>MainWindow</string>
+   <string>CAM 系统</string>
   </property>
-  <widget class="QWidget" name="centralwidget">
-   <widget class="QOpenGLWidget" name="openGLWidget">
-    <property name="geometry">
-     <rect>
-      <x>0</x>
-      <y>60</y>
-      <width>601</width>
-      <height>471</height>
-     </rect>
-    </property>
-   </widget>
-  </widget>
+  <widget class="QWidget" name="centralwidget"/>
   <widget class="QMenuBar" name="menubar">
    <property name="geometry">
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>800</width>
-     <height>33</height>
+     <width>1200</width>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuFile">
@@ -57,56 +46,60 @@
     <addaction name="actionViewRight"/>
     <addaction name="actionViewFront"/>
     <addaction name="actionViewBack"/>
+    <addaction name="separator"/>
     <addaction name="actionViewTool"/>
-   </widget>
-   <widget class="QMenu" name="menuTool">
-    <property name="title">
-     <string>——</string>
-    </property>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuView"/>
-   <addaction name="menuTool"/>
   </widget>
   <widget class="QStatusBar" name="statusbar"/>
   <widget class="QDockWidget" name="dockWidgetToolTable">
    <property name="minimumSize">
     <size>
-     <width>520</width>
-     <height>500</height>
-    </size>
-   </property>
-   <property name="maximumSize">
-    <size>
-     <width>524287</width>
-     <height>524287</height>
+     <width>400</width>
+     <height>300</height>
     </size>
    </property>
    <property name="windowTitle">
-    <string>刀库</string>
+    <string>刀具库</string>
    </property>
    <attribute name="dockWidgetArea">
     <number>1</number>
    </attribute>
    <widget class="QWidget" name="dockWidgetContents">
     <layout class="QVBoxLayout" name="verticalLayout">
+     <property name="spacing">
+      <number>8</number>
+     </property>
+     <property name="leftMargin">
+      <number>8</number>
+     </property>
+     <property name="topMargin">
+      <number>8</number>
+     </property>
+     <property name="rightMargin">
+      <number>8</number>
+     </property>
+     <property name="bottomMargin">
+      <number>8</number>
+     </property>
      <item>
       <widget class="QLabel" name="labelCurrentTool">
        <property name="text">
         <string>当前没有选中刀具</string>
        </property>
+       <property name="styleSheet">
+        <string>QLabel { padding: 6px; background-color: #f0f0f0; border-radius: 4px; font-weight: bold; }</string>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QTableWidget" name="tableWidgetToolTable">
-       <property name="minimumSize">
-        <size>
-         <width>0</width>
-         <height>0</height>
-        </size>
+       <property name="alternatingRowColors">
+        <bool>true</bool>
        </property>
-       <property name="rowCount">
-        <number>1</number>
+       <property name="selectionBehavior">
+        <enum>QAbstractItemView::SelectionBehavior::SelectRows</enum>
        </property>
        <property name="columnCount">
         <number>8</number>
@@ -114,10 +107,6 @@
        <attribute name="horizontalHeaderVisible">
         <bool>true</bool>
        </attribute>
-       <attribute name="horizontalHeaderCascadingSectionResizes">
-        <bool>false</bool>
-       </attribute>
-       <row/>
        <column/>
        <column/>
        <column/>
@@ -129,59 +118,72 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="pushButtonSelectTool">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
+      <layout class="QHBoxLayout" name="buttonLayout">
+       <property name="spacing">
+        <number>8</number>
        </property>
-       <property name="layoutDirection">
-        <enum>Qt::LayoutDirection::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>选中刀具</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButtonAddTool">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LayoutDirection::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>新增刀具</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButtonDeleteTools">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="layoutDirection">
-        <enum>Qt::LayoutDirection::LeftToRight</enum>
-       </property>
-       <property name="text">
-        <string>删除刀具</string>
-       </property>
-      </widget>
+       <item>
+        <widget class="QPushButton" name="pushButtonSelectTool">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>选中刀具</string>
+         </property>
+         <property name="styleSheet">
+          <string>QPushButton { background-color: #4CAF50; color: white; border-radius: 4px; font-weight: bold; }
+QPushButton:hover { background-color: #45a049; }
+QPushButton:pressed { background-color: #3d8b40; }</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonAddTool">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>新增刀具</string>
+         </property>
+         <property name="styleSheet">
+          <string>QPushButton { background-color: #2196F3; color: white; border-radius: 4px; font-weight: bold; }
+QPushButton:hover { background-color: #1976D2; }
+QPushButton:pressed { background-color: #0D47A1; }</string>
+         </property>
+        </widget>
+       </item>
+       <item>
+        <widget class="QPushButton" name="pushButtonDeleteTools">
+         <property name="minimumSize">
+          <size>
+           <width>0</width>
+           <height>32</height>
+          </size>
+         </property>
+         <property name="text">
+          <string>删除刀具</string>
+         </property>
+         <property name="styleSheet">
+          <string>QPushButton { background-color: #f44336; color: white; border-radius: 4px; font-weight: bold; }
+QPushButton:hover { background-color: #da190b; }
+QPushButton:pressed { background-color: #a01207; }</string>
+         </property>
+        </widget>
+       </item>
+      </layout>
      </item>
     </layout>
    </widget>
   </widget>
   <action name="actionOpenFile">
    <property name="text">
-    <string>导入模型(&amp;O)</string>
+    <string>导入模型 (&amp;O)</string>
    </property>
   </action>
   <action name="actionViewTop">
@@ -216,12 +218,12 @@
   </action>
   <action name="actionOpenTool">
    <property name="text">
-    <string>导入刀具(&amp;T)</string>
+    <string>导入刀具库 (&amp;T)</string>
    </property>
   </action>
   <action name="actionViewTool">
    <property name="text">
-    <string>打开刀库</string>
+    <string>显示刀具库</string>
    </property>
   </action>
  </widget>

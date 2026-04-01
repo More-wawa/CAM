@@ -2,12 +2,28 @@
 #include "../ui/ui_MainWindow.h"
 #include "../include/VTKManager.h"
 #include "../include/ToolManager.h"
+#include "../include/ToolpathPlanner.h"
+#include "../include/Toolpath.h"
+#include "../include/GCodeGenerator.h"
 #include "../include/dialogaddtool.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <QFileDialog>
 #include <QMessageBox>
 #include <QJsonObject>
 #include <QDockWidget>
+#include <QComboBox>
+#include <QDoubleSpinBox>
+#include <QSpinBox>
+#include <QPushButton>
+#include <QListWidget>
+#include <QGroupBox>
+#include <QFormLayout>
+#include <QVBoxLayout>
+#include <QHBoxLayout>
+#include <QLabel>
+#include <QProgressBar>
+#include <QTextEdit>
+#include <QFont>
 
 MainWindow::MainWindow(QWidget *parent) : QMainWindow(parent), ui(new Ui::MainWindow) {
     ui->setupUi(this);
@@ -25,6 +41,30 @@ void MainWindow::init() {
     setWindowTitle("CAM");
     setWindowIcon(QIcon("../image/ico.png"));
 
+    // 全局样式表：统一字体、菜单栏、状态栏外观
+    setStyleSheet(R"(
+        QMainWindow { background-color: #f5f5f5; }
+        QMenuBar { background-color: #2c2c2c; color: white; padding: 2px; }
+        QMenuBar::item:selected { background-color: #444; }
+        QMenu { background-color: #2c2c2c; color: white; }
+        QMenu::item:selected { background-color: #555; }
+        QStatusBar { background-color: #e0e0e0; color: #333; }
+        QDockWidget::title { background: #3c3c3c; color: white; padding: 5px; font-weight: bold; }
+        QGroupBox { font-weight: bold; border: 1px solid #ccc; border-radius: 6px; margin-top: 8px; padding-top: 6px; }
+        QGroupBox::title { subcontrol-origin: margin; left: 8px; padding: 0 4px; }
+        QTableWidget { border: 1px solid #ccc; border-radius: 4px; gridline-color: #e0e0e0; }
+        QTableWidget::item:selected { background-color: #2196F3; color: white; }
+        QHeaderView::section { background-color: #3c3c3c; color: white; padding: 4px; border: none; }
+        QComboBox { padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
+        QDoubleSpinBox, QSpinBox { padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
+        QLineEdit { padding: 4px; border: 1px solid #ccc; border-radius: 4px; }
+        QLabel { color: #333; }
+        QMessageBox { background-color: white; }
+        QMessageBox QLabel { color: #333; }
+        QDialog { background-color: white; }
+        QDialog QLabel { color: #333; }
+    )");
+
     // 绑定控件
     toolWidget = ui->dockWidgetToolTable;
     toolWidget->setVisible(false);
@@ -34,11 +74,11 @@ void MainWindow::init() {
         QStringList() << "编号" << "名称" << "类型" << "直径"
         << "刃长" << "刃数" << "材质" << "状态");
     // 表格样式设置
-    toolTable->setAlternatingRowColors(true); // 隔行变色
-    toolTable->setSelectionMode(QAbstractItemView::ExtendedSelection); // 多行选择
-    toolTable->setSelectionBehavior(QAbstractItemView::SelectRows); // 整行选择
-    toolTable->setEditTriggers(QAbstractItemView::NoEditTriggers); // 禁止编辑
-    toolTable->verticalHeader()->setVisible(false); // 隐藏行号
+    toolTable->setAlternatingRowColors(true);                                // 隔行变色
+    toolTable->setSelectionMode(QAbstractItemView::ExtendedSelection);       // 多行选择
+    toolTable->setSelectionBehavior(QAbstractItemView::SelectRows);          // 整行选择
+    toolTable->setEditTriggers(QAbstractItemView::NoEditTriggers);           // 禁止编辑
+    toolTable->verticalHeader()->setVisible(false);                          // 隐藏行号
     toolTable->horizontalHeader()->setDefaultAlignment(Qt::AlignCenter);
     // toolTable->setSortingEnabled(true); // 允许点击表头排序
 
@@ -59,6 +99,19 @@ void MainWindow::init() {
     vtkManager = VTKManager::New();
     vtkManager->init();
     setCentralWidget(vtkManager->m_vtk_widget());
+
+    // 创建刀具路径规划器
+    toolpathPlanner = ToolpathPlanner::New();
+    toolpathPlanner->setRenderer(vtkManager->getRenderer());
+
+    // 连接异步信号
+    connect(toolpathPlanner, &ToolpathPlanner::layerGenerated,
+            this, &MainWindow::onToolpathLayerGenerated);
+    connect(toolpathPlanner, &ToolpathPlanner::generationFinished,
+            this, &MainWindow::onToolpathGenerationFinished);
+
+    // 初始化加工操作 Dock
+    initToolpathDock();
 }
 
 void MainWindow::on_actionOpenFile_triggered() {
@@ -82,6 +135,11 @@ void MainWindow::on_actionOpenFile_triggered() {
 
     if (const ResultType r = vtkManager->openModelFile(fileName); r == ResultType::Success) {
         modelLoaded = true;
+        // 将 OCCT shape 传给路径规划器，并清空旧路径
+        toolpathPlanner->clearAll();
+        toolpathPlanner->setShape(vtkManager->getShape());
+        toolpathPlanner->setCurrentTool(toolManager->current_tool());
+        updateToolpathList();
     } else if (r == ResultType::FileOpenError) {
         QMessageBox::warning(this, tr("错误"), tr("无法打开文件"));
     }
@@ -389,4 +447,298 @@ void MainWindow::tableWidgetDoubleClicked(const int row, const int column) const
     toolManager->set_current_tool(tool);
 
     ui->labelCurrentTool->setText(QString("当前选中 %1 号刀具").arg(row + 1));
+}
+
+void MainWindow::initToolpathDock()
+{
+    toolpathDock = new QDockWidget(tr("加工操作"), this);
+    toolpathDock->setVisible(false);
+
+    auto* dockContent = new QWidget();
+    auto* mainLayout = new QVBoxLayout(dockContent);
+
+    // 加工类型选择
+    mainLayout->addWidget(new QLabel(tr("加工类型")));
+    comboBoxMachType = new QComboBox();
+    comboBoxMachType->addItem(tr("面铣 (Planar Face Milling)"));
+    comboBoxMachType->addItem(tr("轮廓铣 (Contour Milling)"));
+    mainLayout->addWidget(comboBoxMachType);
+
+    // 切削参数组
+    auto* paramGroup = new QGroupBox(tr("切削参数"));
+    auto* formLayout = new QFormLayout();
+
+    spinBoxDepth = new QDoubleSpinBox();
+    spinBoxDepth->setRange(0.1, 50.0);
+    spinBoxDepth->setSingleStep(0.1);
+    spinBoxDepth->setValue(1.0);
+    spinBoxDepth->setSuffix(" mm");
+    formLayout->addRow(tr("切深 (mm)"), spinBoxDepth);
+
+    spinBoxStepover = new QDoubleSpinBox();
+    spinBoxStepover->setRange(0.1, 50.0);
+    spinBoxStepover->setSingleStep(0.1);
+    spinBoxStepover->setValue(0.5);
+    spinBoxStepover->setSuffix(" mm");
+    formLayout->addRow(tr("行距 (mm)"), spinBoxStepover);
+
+    spinBoxFeedRate = new QDoubleSpinBox();
+    spinBoxFeedRate->setRange(1.0, 10000.0);
+    spinBoxFeedRate->setSingleStep(10.0);
+    spinBoxFeedRate->setValue(500.0);
+    spinBoxFeedRate->setSuffix(" mm/min");
+    formLayout->addRow(tr("进给率 (mm/min)"), spinBoxFeedRate);
+
+    spinBoxSpindle = new QSpinBox();
+    spinBoxSpindle->setRange(100, 30000);
+    spinBoxSpindle->setSingleStep(100);
+    spinBoxSpindle->setValue(8000);
+    spinBoxSpindle->setSuffix(" RPM");
+    formLayout->addRow(tr("主轴转速 (RPM)"), spinBoxSpindle);
+
+    paramGroup->setLayout(formLayout);
+    mainLayout->addWidget(paramGroup);
+
+    // 生成按钮（改名避免 Qt 自动连接警告）
+    btnGeneratePath = new QPushButton(tr("生成刀路"));
+    btnGeneratePath->setObjectName("btnGenPath");
+    btnGeneratePath->setMinimumHeight(36);
+    btnGeneratePath->setStyleSheet(
+        "QPushButton { background-color: #4CAF50; color: white; border-radius: 4px; font-weight: bold; font-size: 13px; }"
+        "QPushButton:hover { background-color: #45a049; }"
+        "QPushButton:pressed { background-color: #3d8b40; }"
+        "QPushButton:disabled { background-color: #cccccc; color: #666666; }"
+    );
+    connect(btnGeneratePath, &QPushButton::clicked, this, &MainWindow::generateToolpathClicked);
+    mainLayout->addWidget(btnGeneratePath);
+
+    // 进度显示
+    labelProgress = new QLabel(tr("就绪"));
+    labelProgress->setStyleSheet("color: #555; font-style: italic;");
+    mainLayout->addWidget(labelProgress);
+    progressBar = new QProgressBar();
+    progressBar->setRange(0, 100);
+    progressBar->setValue(0);
+    progressBar->setVisible(false);
+    progressBar->setTextVisible(true);
+    progressBar->setStyleSheet(
+        "QProgressBar { border: 1px solid #ccc; border-radius: 4px; height: 14px; text-align: center; }"
+        "QProgressBar::chunk { background-color: #4CAF50; border-radius: 3px; }"
+    );
+    mainLayout->addWidget(progressBar);
+
+    // 刀路列表
+    mainLayout->addWidget(new QLabel(tr("已生成刀路")));
+    listWidgetPaths = new QListWidget();
+    listWidgetPaths->setAlternatingRowColors(true);
+    listWidgetPaths->setStyleSheet(
+        "QListWidget { border: 1px solid #ccc; border-radius: 4px; }"
+        "QListWidget::item:selected { background-color: #2196F3; color: white; }"
+    );
+    mainLayout->addWidget(listWidgetPaths);
+
+    // 刀路控制按钮（水平排列）
+    auto* pathBtnLayout = new QHBoxLayout();
+    btnToggleVisible = new QPushButton(tr("显示/隐藏"));
+    btnToggleVisible->setObjectName("btnToggleVis");
+    btnToggleVisible->setMinimumHeight(30);
+    btnToggleVisible->setStyleSheet(
+        "QPushButton { background-color: #FF9800; color: white; border-radius: 4px; font-weight: bold; }"
+        "QPushButton:hover { background-color: #F57C00; }"
+        "QPushButton:pressed { background-color: #E65100; }"
+    );
+    connect(btnToggleVisible, &QPushButton::clicked, this, &MainWindow::toggleToolpathVisibleClicked);
+    pathBtnLayout->addWidget(btnToggleVisible);
+
+    btnClearPaths = new QPushButton(tr("清空刀路"));
+    btnClearPaths->setObjectName("btnClearAll");
+    btnClearPaths->setMinimumHeight(30);
+    btnClearPaths->setStyleSheet(
+        "QPushButton { background-color: #f44336; color: white; border-radius: 4px; font-weight: bold; }"
+        "QPushButton:hover { background-color: #da190b; }"
+        "QPushButton:pressed { background-color: #a01207; }"
+    );
+    connect(btnClearPaths, &QPushButton::clicked, this, &MainWindow::clearToolpathsClicked);
+    pathBtnLayout->addWidget(btnClearPaths);
+    mainLayout->addLayout(pathBtnLayout);
+
+    // G代码导出区
+    mainLayout->addWidget(new QLabel(tr("G代码导出")));
+
+    btnExportGCode = new QPushButton(tr("导出G代码"));
+    btnExportGCode->setObjectName("btnExportGCode");
+    btnExportGCode->setMinimumHeight(36);
+    btnExportGCode->setStyleSheet(
+        "QPushButton { background-color: #9C27B0; color: white; border-radius: 4px; font-weight: bold; font-size: 13px; }"
+        "QPushButton:hover { background-color: #7B1FA2; }"
+        "QPushButton:pressed { background-color: #6A1B9A; }"
+    );
+    connect(btnExportGCode, &QPushButton::clicked, this, &MainWindow::exportGCodeClicked);
+    mainLayout->addWidget(btnExportGCode);
+
+    gCodePreview = new QTextEdit();
+    gCodePreview->setReadOnly(true);
+    gCodePreview->setMaximumHeight(160);
+    gCodePreview->setFont(QFont("Courier New", 8));
+    gCodePreview->setPlaceholderText(tr("G代码预览将显示在此处..."));
+    gCodePreview->setStyleSheet(
+        "QTextEdit { border: 1px solid #ccc; border-radius: 4px; background-color: #f9f9f9; }"
+    );
+    mainLayout->addWidget(gCodePreview);
+
+    mainLayout->addStretch();
+
+    toolpathDock->setWidget(dockContent);
+    addDockWidget(Qt::RightDockWidgetArea, toolpathDock);
+
+    // 在菜单中添加动作
+    QAction* actionViewToolpath = new QAction(tr("加工操作"), this);
+    connect(actionViewToolpath, &QAction::triggered, [this]() { toolpathDock->setVisible(true); });
+    ui->menuView->addAction(actionViewToolpath);
+}
+
+void MainWindow::updateToolpathList() const
+{
+    if (!listWidgetPaths) return;
+    listWidgetPaths->clear();
+    for (int i = 0; i < toolpathPlanner->count(); ++i)
+    {
+        const Toolpath& p = toolpathPlanner->toolpaths().at(i);
+        listWidgetPaths->addItem(QString("%1 — %2 段").arg(p.name).arg(p.segments.size()));
+    }
+}
+
+void MainWindow::generateToolpathClicked()
+{
+    if (!modelLoaded)
+    {
+        QMessageBox::warning(this, tr("警告"), tr("请先加载 STEP 模型"));
+        return;
+    }
+
+    if (toolpathPlanner->isGenerating())
+    {
+        QMessageBox::information(this, tr("提示"), tr("刀路正在生成中，请稍候"));
+        return;
+    }
+
+    toolpathPlanner->setCurrentTool(toolManager->current_tool());
+
+    double depth    = spinBoxDepth->value();
+    double stepover = spinBoxStepover->value();
+    double feed     = spinBoxFeedRate->value();
+    int    spindle  = spinBoxSpindle->value();
+
+    int idx = comboBoxMachType->currentIndex();
+
+    // 显示进度条
+    progressBar->setValue(0);
+    progressBar->setVisible(true);
+    labelProgress->setText(tr("正在生成刀路..."));
+    btnGeneratePath->setEnabled(false);
+
+    if (idx == 0)
+        toolpathPlanner->generateFaceMillingAsync(depth, stepover, feed, spindle);
+    else
+        toolpathPlanner->generateContourMillingAsync(depth, stepover, feed, spindle);
+}
+
+void MainWindow::onToolpathLayerGenerated(int current, int total)
+{
+    int percent = (current * 100) / total;
+    progressBar->setValue(percent);
+    labelProgress->setText(QString("生成中：第 %1/%2 层").arg(current).arg(total));
+
+    // 不触发渲染，避免主线程阻塞
+    // vtkManager->renderUpdate();
+}
+
+void MainWindow::onToolpathGenerationFinished(ResultType result, QString message)
+{
+    progressBar->setVisible(false);
+    btnGeneratePath->setEnabled(true);
+
+    if (result == ResultType::Success)
+    {
+        labelProgress->setText(tr("生成完成"));
+        updateToolpathList();
+        // 只在完成时渲染一次
+        vtkManager->renderUpdate();
+    }
+    else
+    {
+        labelProgress->setText(tr("生成失败"));
+    }
+
+    ui->statusbar->showMessage(message, 5000);
+}
+
+void MainWindow::toggleToolpathVisibleClicked()
+{
+    int idx = listWidgetPaths->currentRow();
+    if (idx < 0)
+    {
+        QMessageBox::warning(this, tr("警告"), tr("请先选择一条刀路"));
+        return;
+    }
+
+    bool curVisible = toolpathPlanner->toolpaths().at(idx).visible;
+    toolpathPlanner->setToolpathVisible(idx, !curVisible);
+    vtkManager->renderUpdate();
+}
+
+void MainWindow::clearToolpathsClicked()
+{
+    toolpathPlanner->clearAll();
+    updateToolpathList();
+    labelProgress->setText(tr("就绪"));
+    vtkManager->renderUpdate();
+}
+
+void MainWindow::exportGCodeClicked()
+{
+    const int idx = listWidgetPaths->currentRow();
+    if (idx < 0)
+    {
+        QMessageBox::warning(this, tr("警告"), tr("请先选择一条刀路"));
+        return;
+    }
+
+    const Toolpath& path = toolpathPlanner->toolpaths().at(idx);
+    const Tool tool = toolManager->current_tool();
+
+    if (tool.name.isEmpty())
+    {
+        QMessageBox::warning(this, tr("警告"), tr("请先选择刀具"));
+        return;
+    }
+
+    GCodeGenerator* gen = GCodeGenerator::New();
+    QString message;
+
+    if (gen->generate(path, tool, 1, &message) != ResultType::Success)
+    {
+        QMessageBox::warning(this, tr("G代码生成失败"), message);
+        delete gen;
+        return;
+    }
+
+    gCodePreview->setPlainText(gen->preview());
+
+    QString filePath = QFileDialog::getSaveFileName(
+        this,
+        tr("导出G代码"),
+        QString(),
+        tr("SINUMERIK MPF (*.mpf);;NC 文件 (*.nc)")
+    );
+
+    if (!filePath.isEmpty())
+    {
+        if (gen->exportToFile(filePath, &message) == ResultType::Success)
+            ui->statusbar->showMessage(message, 5000);
+        else
+            QMessageBox::warning(this, tr("导出失败"), message);
+    }
+
+    delete gen;
 }

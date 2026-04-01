@@ -1,3 +1,8 @@
+/**
+ * @file VTKManager.cpp
+ * @brief VTK 三维可视化管理器实现
+ */
+
 #include "../include/vtkManager.h"
 #include <QVTKOpenGLNativeWidget.h>
 #include <vtkRenderer.h>
@@ -16,63 +21,56 @@
 #include <QDebug>
 #include <vtkProperty.h>
 
-
 VTKManager* VTKManager::New()
 {
     return new VTKManager();
 }
 
+/**
+ * @brief 初始化 VTK 渲染管线
+ * @details 创建渲染器、窗口、交互器、坐标轴等组件
+ */
 void VTKManager::init()
 {
-    // 检查是否已经初始化
     if (initialized) return;
 
-    // 创建 VTK Widget
     m_vtkWidget = new QVTKOpenGLNativeWidget();
-
-    // 创建渲染器
     m_vtkRenderer = vtkSmartPointer<vtkRenderer>::New();
-    m_vtkRenderer->SetBackground(0.1, 0.2, 0.3); // 深蓝背景
 
-    // 启用渐变背景
+    // 渐变背景（白色到淡蓝）
     m_vtkRenderer->GradientBackgroundOn();
     m_vtkRenderer->SetBackground(1, 1, 1);
     m_vtkRenderer->SetBackground2(0.5, 0.5, 0.8);
 
-    // 把渲染器加到窗口
     m_vtkWidget->renderWindow()->AddRenderer(m_vtkRenderer);
 
-    // 交互器风格
+    // 轨迹球交互风格
     m_vtkStyle = vtkSmartPointer<vtkInteractorStyleTrackballCamera>::New();
     m_vtkWidget->renderWindow()->GetInteractor()->SetInteractorStyle(m_vtkStyle);
 
-    // Mapper
-    // m_vtkMapper = vtkSmartPointer<vtkCompositePolyDataMapper>::New();
     m_vtkMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
-
-    // 获取摄像机
     m_vtkCamera = m_vtkRenderer->GetActiveCamera();
 
-    // 开启参考线
+    // 坐标轴指示器
     m_vtkAxesActor = vtkSmartPointer<vtkAxesActor>::New();
     m_vtkAxesActor->SetShaftTypeToCylinder();
     m_vtkAxesActor->SetXAxisLabelText("X");
     m_vtkAxesActor->SetYAxisLabelText("Y");
     m_vtkAxesActor->SetZAxisLabelText("Z");
 
-    // 创建 widget 并关联
     m_vtkOrientationMarkerWidget = vtkSmartPointer<vtkOrientationMarkerWidget>::New();
     m_vtkOrientationMarkerWidget->SetOrientationMarker(m_vtkAxesActor);
     m_vtkOrientationMarkerWidget->SetInteractor(m_vtkWidget->renderWindow()->GetInteractor());
-
-    // 开启参考线并放置屏幕左下角
     m_vtkOrientationMarkerWidget->SetEnabled(1);
     m_vtkOrientationMarkerWidget->InteractiveOn();
 
-    // 确认已经初始化
     initialized = true;
 }
 
+/**
+ * @brief 加载 STEP 模型文件
+ * @details 使用 OCCT 读取并网格化，再通过 IVtk 桥接转为 VTK Actor 显示
+ */
 ResultType VTKManager::openModelFile(const QString& fileName)
 {
     // 1. 环境准备
@@ -104,6 +102,8 @@ ResultType VTKManager::openModelFile(const QString& fileName)
         qDebug() << "转换后的 Shape 为空";
         return ResultType::ModulError;
     }
+
+    m_occtShape = occtShape;
 
     // 网格化
     BRepMesh_IncrementalMesh meshGenerator(occtShape, 0.1);
@@ -144,6 +144,16 @@ ResultType VTKManager::openModelFile(const QString& fileName)
     return ResultType::Success;
 }
 
+void VTKManager::renderUpdate() const
+{
+    if (m_vtkWidget && m_vtkWidget->renderWindow())
+        m_vtkWidget->renderWindow()->Render();
+}
+
+/**
+ * @brief 设置标准视角
+ * @details 根据方向向量和上方向调整相机位置，保持焦点不变
+ */
 void VTKManager::setStandardView(const double dx, const double dy, const double dz, const double ux, const double uy,
                                  const double uz) const
 {
@@ -153,7 +163,7 @@ void VTKManager::setStandardView(const double dx, const double dy, const double 
         return;
     }
 
-    // 获得当前模型最合适的距离和焦点
+    // 获取当前焦点和距离
     m_vtkRenderer->ResetCamera();
     const double* focal = m_vtkCamera->GetFocalPoint();
     const double dist = m_vtkCamera->GetDistance() * 1.2;
@@ -167,9 +177,7 @@ void VTKManager::setStandardView(const double dx, const double dy, const double 
     m_vtkCamera->SetFocalPoint(focal);
     m_vtkCamera->SetViewUp(ux, uy, uz);
 
-    // 消除警告
     m_vtkCamera->OrthogonalizeViewUp();
-
     m_vtkRenderer->ResetCameraClippingRange();
     m_vtkWidget->renderWindow()->Render();
 }
