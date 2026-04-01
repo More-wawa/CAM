@@ -12,6 +12,7 @@ class vtkRenderer;
 class vtkRenderWindow;
 class vtkInteractorStyleTrackballCamera;
 class vtkCompositePolyDataMapper;
+class vtkPolyDataMapper;
 class vtkOCCTReader;
 class vtkActor;
 class vtkCamera;
@@ -37,12 +38,14 @@ private:
     vtkSmartPointer<vtkRenderer> m_vtkRenderer;
     vtkSmartPointer<vtkRenderWindow> m_vtkRenderWindow;
     vtkSmartPointer<vtkInteractorStyleTrackballCamera> m_vtkStyle;
-    vtkSmartPointer<vtkCompositePolyDataMapper> m_vtkMapper;
+    // vtkSmartPointer<vtkCompositePolyDataMapper> m_vtkMapper;
+    vtkSmartPointer<vtkPolyDataMapper> m_vtkMapper;
     vtkSmartPointer<vtkOCCTReader> m_vtkOCCTReader;
     vtkSmartPointer<vtkActor> m_vtkActor;
     vtkSmartPointer<vtkCamera> m_vtkCamera;
     vtkSmartPointer<vtkAxesActor> m_vtkAxesActor;
     vtkSmartPointer<vtkOrientationMarkerWidget> m_vtkOrientationMarkerWidget;
+
 };
 
 

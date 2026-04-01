@@ -3,11 +3,16 @@
 #include <vtkRenderer.h>
 #include <vtkRenderWindow.h>
 #include <vtkInteractorStyleTrackballCamera.h>
-#include <vtkCompositePolyDataMapper.h>
+// #include <vtkCompositePolyDataMapper.h>
+#include <vtkPolyDataMapper.h>
 #include <vtkCamera.h>
 #include <vtkAxesActor.h>
 #include <vtkOrientationMarkerWidget.h>
 #include <vtkOCCTReader.h>
+#include <STEPControl_Reader.hxx>
+#include <TopoDS_Shape.hxx>
+#include <IVtkOCC_Shape.hxx>
+#include <IVtkTools_ShapeDataSource.hxx>
 
 
 VTKManager* VTKManager::New()
@@ -39,7 +44,8 @@ void VTKManager::init() {
     m_vtkWidget->renderWindow()->GetInteractor()->SetInteractorStyle(m_vtkStyle);
 
     // Mapper
-    m_vtkMapper = vtkSmartPointer<vtkCompositePolyDataMapper>::New();
+    // m_vtkMapper = vtkSmartPointer<vtkCompositePolyDataMapper>::New();
+    m_vtkMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
 
     // 获取摄像机
     m_vtkCamera = m_vtkRenderer->GetActiveCamera();
@@ -65,29 +71,73 @@ void VTKManager::init() {
 }
 
 ResultType VTKManager::openModelFile(const QString &fileName) {
-    // 打开新 STEP 文件之前先清空缓存
+    // // 打开新 STEP 文件之前先清空缓存
+    // m_vtkRenderer->RemoveAllViewProps();
+    //
+    // // 创建 OCCTReader 读取 STEP 文件
+    // m_vtkOCCTReader = vtkSmartPointer<vtkOCCTReader>::New();
+    // m_vtkOCCTReader->SetFileName(fileName.toUtf8().constData());
+    // m_vtkOCCTReader->SetFileFormat(vtkOCCTReader::STEP);
+    //
+    // // 更新 pipeline
+    // m_vtkMapper->SetInputConnection(m_vtkOCCTReader->GetOutputPort());
+    //
+    // // 检查输出是否有效
+    // if (!m_vtkOCCTReader->GetOutput()) {
+    //     return ResultType::ModulError;
+    // }
+    // qDebug() << "STEP 文件读取成功";
+    //
+    // // 创建 Actor 并添加至渲染器
+    // m_vtkActor = vtkSmartPointer<vtkActor>::New();
+    // m_vtkActor->SetMapper(m_vtkMapper);
+    // m_vtkRenderer->AddActor(m_vtkActor);
+    //
+    // // 重置相机并渲染
+    // m_vtkRenderer->ResetCamera();
+    // m_vtkWidget->renderWindow()->Render();
+    //
+    // return ResultType::Success;
+
+    // 1. 清空旧的渲染内容
     m_vtkRenderer->RemoveAllViewProps();
 
-    // 创建 OCCTReader 读取 STEP 文件
-    m_vtkOCCTReader = vtkSmartPointer<vtkOCCTReader>::New();
-    m_vtkOCCTReader->SetFileName(fileName.toUtf8().constData());
-    m_vtkOCCTReader->SetFileFormat(vtkOCCTReader::STEP);
+    // 2. 使用 OCCT 原生接口读取 STEP 文件
+    STEPControl_Reader reader;
+    IFSelect_ReturnStatus status = reader.ReadFile(fileName.toUtf8().constData());
 
-    // 更新 pipeline
-    m_vtkMapper->SetInputConnection(m_vtkOCCTReader->GetOutputPort());
-
-    // 检查输出是否有效
-    if (!m_vtkOCCTReader->GetOutput()) {
+    if (status != IFSelect_RetDone) {
+        qDebug() << "STEP 文件读取失败，状态码:" << status;
         return ResultType::ModulError;
     }
-    qDebug() << "STEP 文件读取成功";
 
-    // 创建 Actor 并添加至渲染器
+    // 将文件内容转换为 OCCT 的 TopoDS_Shape
+    reader.TransferRoots();
+    TopoDS_Shape occtShape = reader.OneShape();
+
+    if (occtShape.IsNull()) {
+        qDebug() << "转换后的 Shape 为空";
+        return ResultType::ModulError;
+    }
+
+    // 3. 使用 IVtk 桥接将 OCCT 对象转为 VTK 数据源
+    // 创建 IVtk 包装对象
+    IVtkOCC_Shape::Handle aShapeWrapper = new IVtkOCC_Shape(occtShape);
+
+    // 创建 VTK 数据源并关联 OCCT 包装对象
+    vtkSmartPointer<IVtkTools_ShapeDataSource> shapeSource = vtkSmartPointer<IVtkTools_ShapeDataSource>::New();
+    shapeSource->SetShape(aShapeWrapper);
+
+    // 4. 更新渲染管线 (Pipeline)
+    m_vtkMapper = vtkSmartPointer<vtkPolyDataMapper>::New();
+    m_vtkMapper->SetInputConnection(shapeSource->GetOutputPort());
+
+    // 5. 创建 Actor 并渲染
     m_vtkActor = vtkSmartPointer<vtkActor>::New();
     m_vtkActor->SetMapper(m_vtkMapper);
     m_vtkRenderer->AddActor(m_vtkActor);
 
-    // 重置相机并渲染
+    // 重置相机并触发渲染
     m_vtkRenderer->ResetCamera();
     m_vtkWidget->renderWindow()->Render();
 

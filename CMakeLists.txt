@@ -11,8 +11,12 @@ set(CMAKE_PREFIX_PATH "C:/Qt/6.11.0/msvc2022_64")
 set(DLL_DIR "C:/Users/MoreW/ClionProjects/DLL")
 set(VTK_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/vtk-with-occt/lib/cmake/vtk-9.6")
 set(VTK_BIN_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/vtk-with-occt/bin")
-set(OCCT_BIN_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/opencascade-7.9.3-vc14-64/win64/vc14/bin")
+set(OCCT_ROOT "${DLL_DIR}/${CMAKE_BUILD_TYPE}/opencascade-7.9.3-vc14-64/win64/vc14")
+set(OCCT_BIN_DIR "${OCCT_ROOT}/bin")
 set(OCCT_3RDPARTY_ROOT_DIR "${DLL_DIR}/${CMAKE_BUILD_TYPE}/3rdparty-vc14-64")
+
+include_directories("${DLL_DIR}/${CMAKE_BUILD_TYPE}/opencascade-7.9.3-vc14-64/inc")
+link_directories("${OCCT_ROOT}/lib")
 
 set(QT_LIBS Core Gui Widgets OpenGLWidgets OpenGL)
 set(OCCT_3RDPARTY_BIN_DIRS
@@ -20,6 +24,28 @@ set(OCCT_3RDPARTY_BIN_DIRS
         "${OCCT_3RDPARTY_ROOT_DIR}/openvr-1.14.15-64/bin/win64"
         "${OCCT_3RDPARTY_ROOT_DIR}/freeimage-3.18.0-x64/bin"
         "${OCCT_3RDPARTY_ROOT_DIR}/ffmpeg-3.3.4-64/bin"
+)
+set(OCCT_LIBS
+        # --- 1. 高级桥接与算法库 (放在最前) ---
+        TKIVtk                  # OCCT 与 VTK 的桥接库 (核心依赖)
+        TKOffset                # 刀具补偿与路径偏移算法 (CAM 核心)
+        # --- 2. 数据交换与格式支持 ---
+        TKXSBase                # 提供 XSControl_Reader 基类实现
+        TKDESTEP                # STEP 格式读写支持 (7.9.3 新库名)
+        # --- 3. 可视化与交互管理 (解决 LNK2019/LNK1120 报错的关键) ---
+        TKV3d                   # 3D 视图控制
+        TKService               # 图形服务
+        TKHLR                   # 消隐线算法 (Hidden Line Removal)
+        TKMesh                  # 网格化 (用于显示和计算)
+        # --- 4. 拓扑、几何与基本体构造 ---
+        TKPrim                  # 基本体构造
+        TKTopAlgo               # 拓扑通用算法
+        TKBRep                  # 边界表示法 (BRep) 核心
+        TKGeomAlgo              # 几何算法
+        TKGeomBase              # 几何基础
+        # --- 5. 基础内核 ---
+        TKMath                  # 数学库
+        TKernel                 # OCCT 核心内核
 )
 
 find_package(Qt6 COMPONENTS
@@ -41,6 +67,9 @@ find_package(VTK REQUIRED COMPONENTS
         ViewsQt                 # QVTKOpenGLNativeWidget 所在模块
         RenderingQt             # QT 渲染
         IOOCCT                  # OCCT 读取 STEP 格式支持
+        # 文件读取
+        FiltersModeling
+        FiltersSources
         # 参考线
         RenderingAnnotation
         InteractionWidgets
@@ -60,6 +89,8 @@ add_executable(${PROJECT_NAME} src/main.cpp
         include/dialogaddtool.h
         ui/dialogaddtool.ui
 )
+
+
 target_link_libraries(${PROJECT_NAME}
         Qt::Core
         Qt::Gui
@@ -67,6 +98,7 @@ target_link_libraries(${PROJECT_NAME}
         Qt::OpenGL
         Qt::OpenGLWidgets
         ${VTK_LIBRARIES}
+        ${OCCT_LIBS}
 )
 
 # 在 main.cpp 中设置默认格式
