@@ -86,17 +86,17 @@ add_executable(${PROJECT_NAME}
         include/mainwindow.h
         ui/mainwindow.ui
         include/Tool.h
-        src/vtkManager.cpp
-        include/vtkManager.h
+        src/VTKManager.cpp
+        include/VTKManager.h
         src/ToolManager.cpp
         include/ToolManager.h
         include/EnumType.h
         src/dialogaddtool.cpp
         include/dialogaddtool.h
         ui/dialogaddtool.ui
-        include/Toolpath.h
         include/ToolpathPlanner.h
         src/ToolpathPlanner.cpp
+        include/Toolpath.h
         include/GCodeGenerator.h
         src/GCodeGenerator.cpp
 )
